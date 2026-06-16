@@ -1,0 +1,14 @@
+# Ejemplo de datos para restaurante_db.txt
+# Formato: ID|Mesa|Comensales|Items|Total
+# Este es un archivo de EJEMPLO - copia estos datos a restaurante_db.txt para ver datos pre-cargados
+
+1|1|2|Alitas Picantesx1;Agua Mineralx2|13.99
+2|3|4|Filete Mignonx2;Vino Tintox1|72.97
+3|5|3|Pechuga Rellenax1;Salmón a la Mantequillax1;Cheesecake Clásicox1|48.98
+4|2|2|Tabla de Quesosj1;Refresco|19.00
+5|7|6|Camarones Empanizadosx3;Brownie de Chocolatex3;Cerveza Premiumx4|75.97
+6|4|4|Pasta Alfredox2;Agua Mineralx4;Flan Napoletanox2|41.96
+7|8|5|Alitas Picantesx2;Filete Mignonx1;Postre Mixo;Vino Tintox2|82.96
+8|6|2|Camarones Empanizadosx1;Cheesecake Clásicox1|21.50
+9|9|3|Salmón a la Mantequillax2;Jugo Naturalx3;Brownie de Chocolatex1|71.96
+10|10|4|Tabla de Quesosj1;Pasta Alfredox2;Agua Mineralx4|35.97
