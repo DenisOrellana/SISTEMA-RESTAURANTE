@@ -1,0 +1,150 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    GUÍA PARA SUBIR CAMBIOS A GITHUB
+                        Sistema de Restaurante
+═══════════════════════════════════════════════════════════════════════════════
+
+🔗 ENLACE DEL REPOSITORIO:
+https://github.com/DenisOrellana/SISTEMA-RESTAURANTE.git
+
+───────────────────────────────────────────────────────────────────────────────
+1. CLONAR EL REPOSITORIO (PRIMERA VEZ)
+───────────────────────────────────────────────────────────────────────────────
+
+git clone https://github.com/DenisOrellana/SISTEMA-RESTAURANTE.git
+cd SISTEMA-RESTAURANTE
+
+
+───────────────────────────────────────────────────────────────────────────────
+2. CREAR EL EJECUTABLE (PRIMERA VEZ)
+───────────────────────────────────────────────────────────────────────────────
+
+python build_exe.py
+
+Nota: Las carpetas 'build/' y 'dist/' se generan automáticamente. 
+NO se suben a GitHub porque son archivos generados.
+
+
+───────────────────────────────────────────────────────────────────────────────
+3. VER CAMBIOS QUE HE HECHO
+───────────────────────────────────────────────────────────────────────────────
+
+git status
+
+Esto muestra:
+- Archivos modificados
+- Archivos nuevos no guardados
+- Archivos listos para commit
+
+
+───────────────────────────────────────────────────────────────────────────────
+4. GUARDAR CAMBIOS LOCALES (Antes de subir)
+───────────────────────────────────────────────────────────────────────────────
+
+Agregar todos los cambios:
+git add .
+
+Guardar con un mensaje descriptivo:
+git commit -m "Descripción del cambio"
+
+Ejemplos de mensajes buenos:
+- git commit -m "Agregar validación de email"
+- git commit -m "Corregir bug en autenticación"
+- git commit -m "Actualizar interfaz del login"
+
+
+───────────────────────────────────────────────────────────────────────────────
+5. SUBIR CAMBIOS A GITHUB
+───────────────────────────────────────────────────────────────────────────────
+
+Si estás en la rama MAIN:
+git push origin main
+
+Si estás en otra rama (ejemplo: imagenes-productos):
+git push origin imagenes-productos
+
+Si no sabes en qué rama estás:
+git branch
+
+
+───────────────────────────────────────────────────────────────────────────────
+6. OBTENER LOS CAMBIOS DE OTROS COMPAÑEROS
+───────────────────────────────────────────────────────────────────────────────
+
+git pull origin main
+
+O para todo (fetch + pull):
+git fetch origin
+git pull
+
+
+───────────────────────────────────────────────────────────────────────────────
+7. FLUJO COMPLETO (PASO A PASO)
+───────────────────────────────────────────────────────────────────────────────
+
+1. git pull                    ← Traer cambios recientes
+2. [Hacer cambios en tu código]
+3. git status                  ← Ver qué cambió
+4. git add .                   ← Preparar archivos
+5. git commit -m "mensaje"     ← Guardar cambio
+6. git push origin main        ← Subir a GitHub
+
+
+───────────────────────────────────────────────────────────────────────────────
+8. RAMAS DISPONIBLES
+───────────────────────────────────────────────────────────────────────────────
+
+main                    - Rama principal (código estable)
+imagenes-productos      - Rama para funciones de imágenes
+
+Para cambiar de rama:
+git checkout imagenes-productos
+git checkout main
+
+
+───────────────────────────────────────────────────────────────────────────────
+9. COMANDOS ÚTILES
+───────────────────────────────────────────────────────────────────────────────
+
+Ver historial de commits:
+git log --oneline
+
+Ver cambios sin guardar:
+git diff
+
+Descartar cambios locales:
+git checkout .
+
+Ver todas las ramas:
+git branch -a
+
+
+───────────────────────────────────────────────────────────────────────────────
+❌ ERRORES COMUNES
+───────────────────────────────────────────────────────────────────────────────
+
+"Los cambios no aparecen":
+→ ¿Hiciste git push? Verifica con: git log
+
+"No veo los cambios de mis compañeros":
+→ Ejecuta: git pull origin main
+
+"Tengo conflictos":
+→ Resuelve manualmente o pide ayuda a Denis
+
+"Se me olvidó hacer push":
+→ No importa, puedes hacerlo después con: git push origin main
+
+
+───────────────────────────────────────────────────────────────────────────────
+✅ CHECKLIST ANTES DE TERMINAR
+───────────────────────────────────────────────────────────────────────────────
+
+☐ Hice cambios en mi código
+☐ Guardé los archivos (Ctrl+S)
+☐ Ejecuté: git status
+☐ Ejecuté: git add .
+☐ Ejecuté: git commit -m "mensaje descriptivo"
+☐ Ejecuté: git push origin main (o la rama que corresponda)
+☐ Verifiqué en GitHub que apareció el cambio
+
+═══════════════════════════════════════════════════════════════════════════════
