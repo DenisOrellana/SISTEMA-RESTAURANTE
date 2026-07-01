@@ -36,6 +36,7 @@ class Producto:
     descripcion: str
     precio: float
     categoria: str
+    imagen: str = "imagenes/default.jpg"
     
     def __post_init__(self):
         self.cantidad = 0

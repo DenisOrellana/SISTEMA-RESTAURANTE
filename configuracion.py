@@ -34,29 +34,29 @@ NUMERO_MESAS = 16  # 4x4
 PRODUCTOS = {
     "PLATILLOS": {
         "Entradas": [
-            {"nombre": "Alitas Picantes", "desc": "Alitas crujientes con salsa picante casera", "precio": 8.99},
-            {"nombre": "Camarones Empanizados", "desc": "Camarones frescos empanizados al horno", "precio": 12.50},
-            {"nombre": "Tabla de Quesos", "desc": "Selección de quesos artesanales importados", "precio": 14.99},
+            {"nombre": "Alitas Picantes", "desc": "Alitas crujientes con salsa picante casera", "precio": 8.99, "categoria": "Entradas", "imagen": "imagenes/alitas.jpg"},
+            {"nombre": "Camarones Empanizados", "desc": "Camarones frescos empanizados al horno", "precio": 12.50, "categoria": "Entradas", "imagen": "imagenes/camarones.jpg"},
+            {"nombre": "Tabla de Quesos", "desc": "Selección de quesos artesanales importados", "precio": 14.99, "categoria": "Entradas", "imagen": "imagenes/tabla quesos.jpg"},
         ],
         "Fuerte": [
-            {"nombre": "Filete Mignon", "desc": "Filete de res de 250g con champiñones", "precio": 24.99},
-            {"nombre": "Pechuga Rellena", "desc": "Pechuga de pollo rellena de jamón y queso", "precio": 16.50},
-            {"nombre": "Pasta Alfredo", "desc": "Pasta fresca con salsa cremosa de champiñones", "precio": 14.99},
-            {"nombre": "Salmón a la Mantequilla", "desc": "Salmón fresco con salsa de vino blanco", "precio": 22.99},
+            {"nombre": "Filete Mignon", "desc": "Filete de res de 250g con champiñones", "precio": 24.99, "categoria": "Fuerte", "imagen": "imagenes/filete mignon.jpg"},
+            {"nombre": "Pechuga Rellena", "desc": "Pechuga de pollo rellena de jamón y queso", "precio": 16.50, "categoria": "Fuerte", "imagen": "imagenes/pechuga rellena.jpg"},
+            {"nombre": "Pasta Alfredo", "desc": "Pasta fresca con salsa cremosa de champiñones", "precio": 14.99, "categoria": "Fuerte", "imagen": "imagenes/pasta alfredo.jpg"},
+            {"nombre": "Salmón a la Mantequilla", "desc": "Salmón fresco con salsa de vino blanco", "precio": 22.99, "categoria": "Fuerte", "imagen": "imagenes/salmon a la mantequilla.jpg"},
         ],
         "Postre": [
-            {"nombre": "Brownie de Chocolate", "desc": "Brownie casero con helado de vainilla", "precio": 7.99},
-            {"nombre": "Flan Napolitano", "desc": "Flan casero con caramelo crujiente", "precio": 6.99},
-            {"nombre": "Cheesecake Clásico", "desc": "Cheesecake de Nueva York con frutos rojos", "precio": 9.50},
+            {"nombre": "Brownie de Chocolate", "desc": "Brownie casero con helado de vainilla", "precio": 7.99, "categoria": "Postre", "imagen": "imagenes/browni.jpg"},
+            {"nombre": "Flan Napolitano", "desc": "Flan casero con caramelo crujiente", "precio": 6.99, "categoria": "Postre", "imagen": "imagenes/napolitano.jpg"},
+            {"nombre": "Cheesecake Clásico", "desc": "Cheesecake de Nueva York con frutos rojos", "precio": 9.50, "categoria": "Postre", "imagen": "imagenes/cheesecake.jpg"},
         ],
     },
     "BEBIDAS": {
         "Bebidas": [
-            {"nombre": "Agua Mineral", "desc": "Botella de agua mineral 500ml", "precio": 2.50},
-            {"nombre": "Refresco", "desc": "Refresco surtido 330ml", "precio": 3.00},
-            {"nombre": "Jugo Natural", "desc": "Jugo recién exprimido de frutas frescas", "precio": 5.99},
-            {"nombre": "Vino Tinto", "desc": "Vino tinto reserva 2019", "precio": 22.99},
-            {"nombre": "Cerveza Premium", "desc": "Cerveza artesanal local 355ml", "precio": 4.99},
+            {"nombre": "Agua Mineral", "desc": "Botella de agua mineral 500ml", "precio": 2.50, "categoria": "Bebidas", "imagen": "imagenes/agua mineral.jpg"},
+            {"nombre": "Refresco", "desc": "Refresco surtido 330ml", "precio": 3.00, "categoria": "Bebidas", "imagen": "imagenes/refresco.jpg"},
+            {"nombre": "Jugo Natural", "desc": "Jugo recién exprimido de frutas frescas", "precio": 5.99, "categoria": "Bebidas", "imagen": "imagenes/jugo natural.jpg"},
+            {"nombre": "Vino Tinto", "desc": "Vino tinto reserva 2019", "precio": 22.99, "categoria": "Bebidas", "imagen": "imagenes/vino.jpg"},
+            {"nombre": "Cerveza Premium", "desc": "Cerveza artesanal local 355ml", "precio": 4.99, "categoria": "Bebidas", "imagen": "imagenes/cerveza.jpg"},
         ],
     }
 }
