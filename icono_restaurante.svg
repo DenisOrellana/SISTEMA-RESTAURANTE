@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Fondo circular -->
+  <circle cx="256" cy="256" r="248" fill="#FF9F43"/>
+  <circle cx="256" cy="256" r="228" fill="#2C3E50"/>
+
+  <!-- Cloche (domo de plato) -->
+  <ellipse cx="256" cy="310" rx="120" ry="14" fill="#FF9F43"/>
+  <path d="M136 310 Q136 210 256 200 Q376 210 376 310 Z" fill="#FF9F43"/>
+  <!-- Asa del domo -->
+  <rect x="240" y="192" width="32" height="18" rx="9" fill="#FF9F43"/>
+  <ellipse cx="256" cy="192" rx="22" ry="10" fill="#E67E22"/>
+
+  <!-- Tenedor (izquierda) -->
+  <g transform="translate(155, 285) rotate(-15)">
+    <rect x="-6" y="0" width="12" height="80" rx="6" fill="#FF9F43"/>
+    <rect x="-14" y="-60" width="5" height="50" rx="2.5" fill="#FF9F43"/>
+    <rect x="-5" y="-60" width="5" height="55" rx="2.5" fill="#FF9F43"/>
+    <rect x="4" y="-60" width="5" height="50" rx="2.5" fill="#FF9F43"/>
+    <rect x="-6" y="-10" width="12" height="20" rx="2" fill="#FF9F43"/>
+  </g>
+
+  <!-- Cuchillo (derecha) -->
+  <g transform="translate(357, 285) rotate(15)">
+    <rect x="-6" y="0" width="12" height="80" rx="6" fill="#FF9F43"/>
+    <path d="M-6,-65 Q10,-50 6,-10 L-6,-10 Z" fill="#FF9F43"/>
+  </g>
+
+  <!-- Plato base -->
+  <ellipse cx="256" cy="335" rx="130" ry="18" fill="#E67E22"/>
+  <ellipse cx="256" cy="332" rx="130" ry="12" fill="#FF9F43"/>
+
+  <!-- Texto RESTAURANTE -->
+  <text x="256" y="415" font-family="Arial, sans-serif" font-size="32" font-weight="bold"
+        fill="#FF9F43" text-anchor="middle" letter-spacing="2">RESTAURANTE</text>
+
+  <!-- Estrellas decorativas -->
+  <text x="100" y="180" font-size="22" fill="#FF9F43" opacity="0.7">&#9733;</text>
+  <text x="390" y="180" font-size="22" fill="#FF9F43" opacity="0.7">&#9733;</text>
+  <text x="256" y="145" font-size="18" fill="#FF9F43" opacity="0.5">&#9733;</text>
+</svg>
