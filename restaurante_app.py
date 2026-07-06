@@ -39,9 +39,96 @@ class Producto:
     precio: float
     categoria: str
     imagen: str = "imagenes/default.jpg"
+    receta: dict = None
     
     def __post_init__(self):
         self.cantidad = 0
+        if self.receta is None:
+            self.receta = {}
+
+
+@dataclass
+class InventarioItem:
+    """Estructura de datos para un ingrediente del inventario"""
+    id: int
+    nombre: str
+    unidad: str
+    cantidad: float
+    minimo: float
+    proveedor: str
+
+    @property
+    def estado(self):
+        return "Bajo" if self.cantidad <= self.minimo else "Disponible"
+
+    @property
+    def indicador(self):
+        return "⚠️ Bajo" if self.cantidad <= self.minimo else "✅ Disponible"
+
+    def restock(self, cantidad):
+        self.cantidad += cantidad
+
+
+class Inventario:
+    """Gestiona los ingredientes disponibles y el control de stock"""
+
+    def __init__(self):
+        self.items = self._cargar_inicial()
+
+    def _cargar_inicial(self):
+        return [
+            InventarioItem(1, "Pollo", "kg", 20.0, 5.0, "Proveedor Carnes del Valle"),
+            InventarioItem(2, "Carne", "kg", 12.0, 4.0, "Proveedor Carnes del Valle"),
+            InventarioItem(3, "Camaron", "kg", 10.0, 3.0, "Proveedor Mar Fresco"),
+            InventarioItem(4, "Queso", "kg", 8.0, 2.0, "Proveedor Lácteos La Granja"),
+            InventarioItem(5, "Pasta", "kg", 10.0, 2.0, "Proveedor Pastas Delicias"),
+            InventarioItem(6, "Crema", "L", 8.0, 2.0, "Proveedor Lácteos La Granja"),
+            InventarioItem(7, "Salmon", "kg", 5.0, 1.5, "Proveedor Mar Fresco"),
+            InventarioItem(8, "Chocolate", "kg", 4.0, 1.0, "Proveedor Dulces"),
+            InventarioItem(9, "Harina", "kg", 6.0, 2.0, "Proveedor Harinas"),
+            InventarioItem(10, "Leche", "L", 10.0, 3.0, "Proveedor Lácteos La Granja"),
+            InventarioItem(11, "Azucar", "kg", 6.0, 1.5, "Proveedor Dulces"),
+            InventarioItem(12, "Frutos Rojos", "kg", 3.0, 0.5, "Proveedor Frutas"),
+            InventarioItem(13, "Agua", "uds", 50.0, 10.0, "Proveedor Bebidas"),
+            InventarioItem(14, "Refrescos", "uds", 50.0, 10.0, "Proveedor Bebidas"),
+            InventarioItem(15, "Frutas", "kg", 20.0, 5.0, "Proveedor Frutas"),
+            InventarioItem(16, "Vino", "botellas", 12.0, 4.0, "Proveedor Vinoteca"),
+            InventarioItem(17, "Cerveza", "botellas", 30.0, 8.0, "Proveedor Cervecería"),
+            InventarioItem(18, "Mantequilla", "kg", 5.0, 1.0, "Proveedor Lácteos La Granja"),
+        ]
+
+    def obtener_items(self):
+        return self.items
+
+    def buscar_item(self, nombre):
+        for item in self.items:
+            if item.nombre.lower() == nombre.lower():
+                return item
+        return None
+
+    def decrementar_por_receta(self, receta):
+        if not receta:
+            return
+        # Validar primero la disponibilidad
+        for nombre, cantidad in receta.items():
+            ingrediente = self.buscar_item(nombre)
+            if ingrediente is None:
+                raise ValueError(f"Ingrediente '{nombre}' no está registrado en inventario")
+            if ingrediente.cantidad < cantidad:
+                raise ValueError(f"Stock insuficiente de {nombre}: {ingrediente.cantidad} {ingrediente.unidad}")
+        # Descontar después de validar todo
+        for nombre, cantidad in receta.items():
+            ingrediente = self.buscar_item(nombre)
+            ingrediente.cantidad -= cantidad
+
+    def restock_item(self, nombre, cantidad):
+        ingrediente = self.buscar_item(nombre)
+        if ingrediente is None:
+            raise ValueError(f"Ingrediente '{nombre}' no está registrado en inventario")
+        ingrediente.restock(cantidad)
+
+    def agregar_item(self, item):
+        self.items.append(item)
 
 
 @dataclass
@@ -103,29 +190,29 @@ class CatalogoComienzo:
         productos = {
             "PLATILLOS": {
                 "Entradas": [
-                    Producto(1, "Alitas Picantes", "Alitas crujientes con salsa picante casera", 8.99, "Entradas", "imagenes/alitas.jpg"),
-                    Producto(2, "Camarones Empanizados", "Camarones frescos empanizados al horno", 12.50, "Entradas", "imagenes/camarones.jpg"),
-                    Producto(3, "Tabla de Quesos", "Selección de quesos artesanales importados", 14.99, "Entradas", "imagenes/tabla quesos.jpg"),
+                    Producto(1, "Alitas Picantes", "Alitas crujientes con salsa picante casera", 8.99, "Entradas", "imagenes/alitas.jpg", receta={"Pollo": 0.35, "Queso": 0.02}),
+                    Producto(2, "Camarones Empanizados", "Camarones frescos empanizados al horno", 12.50, "Entradas", "imagenes/camarones.jpg", receta={"Camaron": 0.25, "Harina": 0.08}),
+                    Producto(3, "Tabla de Quesos", "Selección de quesos artesanales importados", 14.99, "Entradas", "imagenes/tabla quesos.jpg", receta={"Queso": 0.25}),
                 ],
                 "Fuerte": [
-                    Producto(4, "Filete Mignon", "Filete de res de 250g con champiñones", 24.99, "Fuerte", "imagenes/filete mignon.jpg"),
-                    Producto(5, "Pechuga Rellena", "Pechuga de pollo rellena de jamón y queso", 16.50, "Fuerte", "imagenes/pechuga rellena.jpg"),
-                    Producto(6, "Pasta Alfredo", "Pasta fresca con salsa cremosa de champiñones", 14.99, "Fuerte", "imagenes/pasta alfredo.jpg"),
-                    Producto(7, "Salmón a la Mantequilla", "Salmón fresco con salsa de vino blanco", 22.99, "Fuerte", "imagenes/Salmon a la mantequilla.jpg"),
+                    Producto(4, "Filete Mignon", "Filete de res de 250g con champiñones", 24.99, "Fuerte", "imagenes/filete mignon.jpg", receta={"Carne": 0.4, "Queso": 0.04}),
+                    Producto(5, "Pechuga Rellena", "Pechuga de pollo rellena de jamón y queso", 16.50, "Fuerte", "imagenes/pechuga rellena.jpg", receta={"Pollo": 0.3, "Queso": 0.05}),
+                    Producto(6, "Pasta Alfredo", "Pasta fresca con salsa cremosa de champiñones", 14.99, "Fuerte", "imagenes/pasta alfredo.jpg", receta={"Pasta": 0.22, "Crema": 0.18, "Queso": 0.04}),
+                    Producto(7, "Salmón a la Mantequilla", "Salmón fresco con salsa de vino blanco", 22.99, "Fuerte", "imagenes/Salmon a la mantequilla.jpg", receta={"Salmon": 0.28, "Mantequilla": 0.05}),
                 ],
                 "Postre": [
-                    Producto(8, "Brownie de Chocolate", "Brownie casero con helado de vainilla", 7.99, "Postre", "imagenes/browni.jpg"),
-                    Producto(9, "Flan Napolitano", "Flan casero con caramelo crujiente", 6.99, "Postre", "imagenes/napolitano.jpg"),
-                    Producto(10, "Cheesecake Clásico", "Cheesecake de Nueva York con frutos rojos", 9.50, "Postre", "imagenes/cheesecake.jpg"),
+                    Producto(8, "Brownie de Chocolate", "Brownie casero con helado de vainilla", 7.99, "Postre", "imagenes/browni.jpg", receta={"Chocolate": 0.18, "Harina": 0.12, "Azucar": 0.05, "Leche": 0.05}),
+                    Producto(9, "Flan Napolitano", "Flan casero con caramelo crujiente", 6.99, "Postre", "imagenes/napolitano.jpg", receta={"Leche": 0.25, "Azucar": 0.06, "Frutos Rojos": 0.05}),
+                    Producto(10, "Cheesecake Clásico", "Cheesecake de Nueva York con frutos rojos", 9.50, "Postre", "imagenes/cheesecake.jpg", receta={"Queso": 0.22, "Azucar": 0.08, "Harina": 0.05}),
                 ],
             },
             "BEBIDAS": {
                 "Bebidas": [
-                    Producto(11, "Agua Mineral", "Botella de agua mineral 500ml", 2.50, "Bebidas", "imagenes/agua mineral.jpg"),
-                    Producto(12, "Refresco", "Refresco surtido 330ml", 3.00, "Bebidas", "imagenes/refresco.jpg"),
-                    Producto(13, "Jugo Natural", "Jugo recién exprimido de frutas frescas", 5.99, "Bebidas", "imagenes/jugo natural.jpg"),
-                    Producto(14, "Vino Tinto", "Vino tinto reserva 2019", 22.99, "Bebidas", "imagenes/vino.jpg"),
-                    Producto(15, "Cerveza Premium", "Cerveza artesanal local 355ml", 4.99, "Bebidas", "imagenes/cerveza.jpg"),
+                    Producto(11, "Agua Mineral", "Botella de agua mineral 500ml", 2.50, "Bebidas", "imagenes/agua mineral.jpg", receta={"Agua": 1.0}),
+                    Producto(12, "Refresco", "Refresco surtido 330ml", 3.00, "Bebidas", "imagenes/refresco.jpg", receta={"Refrescos": 1.0}),
+                    Producto(13, "Jugo Natural", "Jugo recién exprimido de frutas frescas", 5.99, "Bebidas", "imagenes/jugo natural.jpg", receta={"Frutas": 0.4, "Agua": 0.2}),
+                    Producto(14, "Vino Tinto", "Vino tinto reserva 2019", 22.99, "Bebidas", "imagenes/vino.jpg", receta={"Vino": 1.0}),
+                    Producto(15, "Cerveza Premium", "Cerveza artesanal local 355ml", 4.99, "Bebidas", "imagenes/cerveza.jpg", receta={"Cerveza": 1.0}),
                 ],
             }
         }
@@ -150,6 +237,7 @@ class BarraLateral:
         opciones = [
             ("Control de Mesas", "mesas"),
             ("Catálogo de Menú", "catalogo"),
+            ("Control de Inventario", "inventario"),
             ("Confirmación de Orden", "confirmacion"),
             ("Historial y Control", "historial"),
             ("Configuración", "configuracion"),
@@ -963,6 +1051,162 @@ class HistorialControl:
             self.tree.insert("", tk.END, values=tuple(orden.split("|")))
 
 
+class InventarioControl:
+    """Sección de control de inventario"""
+
+    def __init__(self, parent, app):
+        self.app = app
+        self.inventario = app.inventario
+        self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
+        self._crear_interfaz()
+
+    def _crear_interfaz(self):
+        header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
+        header.pack(fill=tk.X)
+
+        titulo = tk.Label(
+            header,
+            text="📦 Control de Inventario",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 14, "bold"),
+            pady=15
+        )
+        titulo.pack()
+
+        contenedor = tk.Frame(self.frame, bg=Colores.FONDO_PRINCIPAL)
+        contenedor.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        info_text = tk.Label(
+            contenedor,
+            text="Gestiona ingredientes, stock disponible y alertas de bajo stock.",
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 10),
+            justify=tk.LEFT
+        )
+        info_text.pack(fill=tk.X, pady=(0, 10))
+
+        frame_tabla = tk.Frame(contenedor, bg=Colores.BLANCO, bd=1, relief=tk.FLAT)
+        frame_tabla.pack(fill=tk.BOTH, expand=True)
+
+        columns = ("ID", "Ingrediente", "Cantidad", "Unidad", "Mínimo", "Estado", "Proveedor")
+        self.tree = ttk.Treeview(
+            frame_tabla,
+            columns=columns,
+            show="headings",
+            height=12
+        )
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=110, anchor=tk.CENTER)
+        self.tree.column("Ingrediente", width=160, anchor=tk.W)
+        self.tree.column("Proveedor", width=140, anchor=tk.W)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(frame_tabla, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        acciones_frame = tk.Frame(contenedor, bg=Colores.BLANCO)
+        acciones_frame.pack(fill=tk.X, pady=15)
+
+        tk.Label(
+            acciones_frame,
+            text="Ingrediente:",
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 10)
+        ).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+
+        self.entry_nombre = tk.Entry(acciones_frame, font=("Segoe UI", 10), width=20)
+        self.entry_nombre.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+
+        tk.Label(
+            acciones_frame,
+            text="Cantidad:",
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 10)
+        ).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+
+        self.entry_cantidad = tk.Entry(acciones_frame, font=("Segoe UI", 10), width=10)
+        self.entry_cantidad.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+
+        btn_restock = tk.Button(
+            acciones_frame,
+            text="➕ Reponer",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=8,
+            command=self._restock_item
+        )
+        btn_restock.grid(row=0, column=4, sticky=tk.W, padx=5, pady=5)
+
+        btn_refrescar = tk.Button(
+            acciones_frame,
+            text="🔄 Refrescar",
+            bg=Colores.NARANJA_OSCURO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=8,
+            command=self.actualizar_tabla
+        )
+        btn_refrescar.grid(row=0, column=5, sticky=tk.W, padx=5, pady=5)
+
+        acciones_frame.columnconfigure(1, weight=1)
+        acciones_frame.columnconfigure(3, weight=0)
+
+        self.actualizar_tabla()
+
+    def actualizar_tabla(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        for ingrediente in self.inventario.obtener_items():
+            self.tree.insert(
+                "",
+                tk.END,
+                values=(
+                    ingrediente.id,
+                    ingrediente.nombre,
+                    f"{ingrediente.cantidad:.2f}",
+                    ingrediente.unidad,
+                    f"{ingrediente.minimo:.2f}",
+                    ingrediente.indicador,
+                    ingrediente.proveedor
+                )
+            )
+
+    def _restock_item(self):
+        nombre = self.entry_nombre.get().strip()
+        cantidad_text = self.entry_cantidad.get().strip()
+        if not nombre or not cantidad_text:
+            messagebox.showwarning("Advertencia", "Ingrese ingrediente y cantidad para reponer")
+            return
+        try:
+            cantidad = float(cantidad_text)
+        except ValueError:
+            messagebox.showerror("Error", "La cantidad debe ser un número válido")
+            return
+
+        try:
+            self.inventario.restock_item(nombre, cantidad)
+            messagebox.showinfo("Inventario", f"Se repuso {cantidad:.2f} {nombre}")
+            self.entry_nombre.delete(0, tk.END)
+            self.entry_cantidad.delete(0, tk.END)
+            self.actualizar_tabla()
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+
+
 class Configuracion:
     """Sección de configuración"""
     
@@ -1101,6 +1345,7 @@ class AplicacionRestaurante:
         
         # Base de datos
         self.db = BaseDatos("restaurante_db.txt")
+        self.inventario = Inventario()
         
         # Contenedor principal
         self.main_container = tk.Frame(self.root, bg=Colores.FONDO_PRINCIPAL)
@@ -1139,16 +1384,17 @@ class AplicacionRestaurante:
         # Otras secciones
         self.secciones["mesas"] = ControlMesas(self.content_container).frame
         
+        self.inventario_control = InventarioControl(self.content_container, self)
+        self.secciones["inventario"] = self.inventario_control.frame
+
         self.secciones["confirmacion"] = ConfirmacionOrden(self.content_container, self.db).frame
-        
+
         self.secciones["historial"] = HistorialControl(self.content_container, self.db).frame
-        
-        self.secciones["configuracion"] = Configuracion(self.content_container).frame
-    
+
     def _on_nav_select(self, codigo_seccion):
         """Callback cuando se selecciona una opción de navegación"""
         self._mostrar_seccion(codigo_seccion)
-    
+
     def _mostrar_seccion(self, codigo_seccion):
         """Muestra la sección seleccionada"""
         for codigo, frame in self.secciones.items():
@@ -1165,6 +1411,18 @@ class AplicacionRestaurante:
     
     def _confirmar_orden(self, mesa, comensales, items, total):
         """Confirma y guarda una orden"""
+        try:
+            # Descontar ingredientes del inventario por cada platillo vendido
+            receta_total = {}
+            for producto, cantidad in items:
+                for nombre, valor in producto.receta.items():
+                    receta_total[nombre] = receta_total.get(nombre, 0) + valor * cantidad
+
+            self.inventario.decrementar_por_receta(receta_total)
+        except ValueError as e:
+            messagebox.showerror("Error de inventario", str(e))
+            return
+
         # Generar ID de orden
         ordenes_existentes = self.db.obtener_ordenes()
         id_orden = len(ordenes_existentes) + 1
@@ -1184,9 +1442,10 @@ class AplicacionRestaurante:
             messagebox.showinfo("Éxito", f"Orden #{id_orden} guardada correctamente para la mesa {mesa}")
             self.vista_previa._limpiar_orden()
             
-            # Actualizar vista de confirmación si existe
             if "confirmacion" in self.secciones:
                 self._actualizar_confirmacion()
+            if hasattr(self, "inventario_control"):
+                self.inventario_control.actualizar_tabla()
         else:
             messagebox.showerror("Error", "No se pudo guardar la orden")
     
@@ -1200,7 +1459,11 @@ def main():
     """Función principal"""
     root = tk.Tk()
     app = AplicacionRestaurante(root)
-    root.mainloop()
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        print("Interrupción de teclado recibida. Cerrando la aplicación...")
+        root.destroy()
 
 
 if __name__ == "__main__":
