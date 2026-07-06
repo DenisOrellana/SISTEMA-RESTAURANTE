@@ -11,6 +11,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, asdict
+from PIL import Image, ImageTk
+import os
 
 
 # ==================== CONFIGURACIÓN DE COLORES ====================
@@ -101,29 +103,29 @@ class CatalogoComienzo:
         productos = {
             "PLATILLOS": {
                 "Entradas": [
-                    Producto(1, "Alitas Picantes", "Alitas crujientes con salsa picante casera", 8.99, "Entradas"),
-                    Producto(2, "Camarones Empanizados", "Camarones frescos empanizados al horno", 12.50, "Entradas"),
-                    Producto(3, "Tabla de Quesos", "Selección de quesos artesanales importados", 14.99, "Entradas"),
+                    Producto(1, "Alitas Picantes", "Alitas crujientes con salsa picante casera", 8.99, "Entradas", "imagenes/alitas.jpg"),
+                    Producto(2, "Camarones Empanizados", "Camarones frescos empanizados al horno", 12.50, "Entradas", "imagenes/camarones.jpg"),
+                    Producto(3, "Tabla de Quesos", "Selección de quesos artesanales importados", 14.99, "Entradas", "imagenes/tabla quesos.jpg"),
                 ],
                 "Fuerte": [
-                    Producto(4, "Filete Mignon", "Filete de res de 250g con champiñones", 24.99, "Fuerte"),
-                    Producto(5, "Pechuga Rellena", "Pechuga de pollo rellena de jamón y queso", 16.50, "Fuerte"),
-                    Producto(6, "Pasta Alfredo", "Pasta fresca con salsa cremosa de champiñones", 14.99, "Fuerte"),
-                    Producto(7, "Salmón a la Mantequilla", "Salmón fresco con salsa de vino blanco", 22.99, "Fuerte"),
+                    Producto(4, "Filete Mignon", "Filete de res de 250g con champiñones", 24.99, "Fuerte", "imagenes/filete mignon.jpg"),
+                    Producto(5, "Pechuga Rellena", "Pechuga de pollo rellena de jamón y queso", 16.50, "Fuerte", "imagenes/pechuga rellena.jpg"),
+                    Producto(6, "Pasta Alfredo", "Pasta fresca con salsa cremosa de champiñones", 14.99, "Fuerte", "imagenes/pasta alfredo.jpg"),
+                    Producto(7, "Salmón a la Mantequilla", "Salmón fresco con salsa de vino blanco", 22.99, "Fuerte", "imagenes/Salmon a la mantequilla.jpg"),
                 ],
                 "Postre": [
-                    Producto(8, "Brownie de Chocolate", "Brownie casero con helado de vainilla", 7.99, "Postre"),
-                    Producto(9, "Flan Napolitano", "Flan casero con caramelo crujiente", 6.99, "Postre"),
-                    Producto(10, "Cheesecake Clásico", "Cheesecake de Nueva York con frutos rojos", 9.50, "Postre"),
+                    Producto(8, "Brownie de Chocolate", "Brownie casero con helado de vainilla", 7.99, "Postre", "imagenes/browni.jpg"),
+                    Producto(9, "Flan Napolitano", "Flan casero con caramelo crujiente", 6.99, "Postre", "imagenes/napolitano.jpg"),
+                    Producto(10, "Cheesecake Clásico", "Cheesecake de Nueva York con frutos rojos", 9.50, "Postre", "imagenes/cheesecake.jpg"),
                 ],
             },
             "BEBIDAS": {
                 "Bebidas": [
-                    Producto(11, "Agua Mineral", "Botella de agua mineral 500ml", 2.50, "Bebidas"),
-                    Producto(12, "Refresco", "Refresco surtido 330ml", 3.00, "Bebidas"),
-                    Producto(13, "Jugo Natural", "Jugo recién exprimido de frutas frescas", 5.99, "Bebidas"),
-                    Producto(14, "Vino Tinto", "Vino tinto reserva 2019", 22.99, "Bebidas"),
-                    Producto(15, "Cerveza Premium", "Cerveza artesanal local 355ml", 4.99, "Bebidas"),
+                    Producto(11, "Agua Mineral", "Botella de agua mineral 500ml", 2.50, "Bebidas", "imagenes/agua mineral.jpg"),
+                    Producto(12, "Refresco", "Refresco surtido 330ml", 3.00, "Bebidas", "imagenes/refresco.jpg"),
+                    Producto(13, "Jugo Natural", "Jugo recién exprimido de frutas frescas", 5.99, "Bebidas", "imagenes/jugo natural.jpg"),
+                    Producto(14, "Vino Tinto", "Vino tinto reserva 2019", 22.99, "Bebidas", "imagenes/vino.jpg"),
+                    Producto(15, "Cerveza Premium", "Cerveza artesanal local 355ml", 4.99, "Bebidas", "imagenes/cerveza.jpg"),
                 ],
             }
         }
@@ -235,18 +237,37 @@ class TarjetaProducto:
             highlightthickness=1
         )
         
-        # Espacio para imagen simulada
-        img_frame = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA, height=80)
+        # Espacio para imagen del producto
+        img_frame = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA, height=150)
         img_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        img_frame.pack_propagate(False)  # Mantener altura fija
         
-        img_label = tk.Label(
-            img_frame,
-            text="📷",
-            bg=Colores.ACENTO_NARANJA,
-            fg=Colores.BLANCO,
-            font=("Segoe UI", 30)
-        )
+        img_label = tk.Label(img_frame, bg=Colores.ACENTO_NARANJA)
         img_label.pack(expand=True)
+        
+        # Intentar cargar la imagen
+        self.img_ref = None  # Referencia para mantener la imagen en memoria
+        try:
+            if os.path.exists(producto.imagen):
+                img = Image.open(producto.imagen)
+                img.thumbnail((220, 150), Image.Resampling.LANCZOS)
+                self.img_ref = ImageTk.PhotoImage(img)
+                img_label.config(image=self.img_ref)
+            else:
+                # Mostrar emoji si la imagen no existe
+                img_label.config(
+                    text="📷",
+                    fg=Colores.BLANCO,
+                    font=("Segoe UI", 30)
+                )
+        except Exception as e:
+            # En caso de error, mostrar emoji
+            print(f"Error cargando imagen {producto.imagen}: {e}")
+            img_label.config(
+                text="📷",
+                fg=Colores.BLANCO,
+                font=("Segoe UI", 30)
+            )
         
         # Nombre del producto
         nombre_label = tk.Label(
