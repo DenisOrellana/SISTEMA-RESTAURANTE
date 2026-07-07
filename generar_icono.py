@@ -12,8 +12,10 @@ def pip_install(pkg):
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
-    pip_install("pillow")
-    from PIL import Image, ImageDraw, ImageFont
+    print("[ERROR] Pillow no está instalado.")
+    print("Instala Pillow manualmente y vuelve a ejecutar:")
+    print(f"  {sys.executable} -m pip install pillow")
+    sys.exit(1)
 
 import math
 
