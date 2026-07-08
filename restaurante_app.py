@@ -241,6 +241,7 @@ class BarraLateral:
             ("Confirmación de Orden", "confirmacion"),
             ("Historial y Control", "historial"),
             ("Configuración", "configuracion"),
+            ("🚪 Salir Admin", "salir_admin"),
         ]
         
         # Logo/título
@@ -439,7 +440,6 @@ class CatalogoMenu:
     
     def __init__(self, parent, on_agregar_callback):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
-        # NO empaquetar aquí - se hará en _crear_secciones
         
         self.on_agregar = on_agregar_callback
         self.tarjetas = {}
@@ -459,7 +459,7 @@ class CatalogoMenu:
         
         titulo = tk.Label(
             header,
-            text="🍽️ Platillos / Bebidas",
+            text="🍽️ Catálogo de Menú",
             bg=Colores.ACENTO_NARANJA,
             fg=Colores.BLANCO,
             font=("Segoe UI", 14, "bold"),
@@ -477,21 +477,30 @@ class CatalogoMenu:
         style.configure('TNotebook', background=Colores.FONDO_PRINCIPAL)
         style.configure('TNotebook.Tab', padding=[20, 10], font=("Segoe UI", 10))
         
-        # Pestaña 1: Platillos
-        tab_platillos = tk.Frame(self.notebook, bg=Colores.FONDO_PRINCIPAL)
-        self.notebook.add(tab_platillos, text="PLATILLOS")
-        self._crear_contenido_platillos(tab_platillos)
+        # Pestaña 1: Entradas
+        tab_entradas = tk.Frame(self.notebook, bg=Colores.FONDO_PRINCIPAL)
+        self.notebook.add(tab_entradas, text="ENTRADAS")
+        self._crear_tab_categoria(tab_entradas, "Entradas", self.catalogo["PLATILLOS"]["Entradas"])
         
-        # Pestaña 2: Bebidas
+        # Pestaña 2: Platillos Fuertes
+        tab_fuertes = tk.Frame(self.notebook, bg=Colores.FONDO_PRINCIPAL)
+        self.notebook.add(tab_fuertes, text="PLATILLOS FUERTES")
+        self._crear_tab_categoria(tab_fuertes, "Fuerte", self.catalogo["PLATILLOS"]["Fuerte"])
+        
+        # Pestaña 3: Postres
+        tab_postres = tk.Frame(self.notebook, bg=Colores.FONDO_PRINCIPAL)
+        self.notebook.add(tab_postres, text="POSTRES")
+        self._crear_tab_categoria(tab_postres, "Postre", self.catalogo["PLATILLOS"]["Postre"])
+        
+        # Pestaña 4: Bebidas
         tab_bebidas = tk.Frame(self.notebook, bg=Colores.FONDO_PRINCIPAL)
         self.notebook.add(tab_bebidas, text="BEBIDAS")
-        self._crear_contenido_bebidas(tab_bebidas)
-    
-    def _crear_contenido_platillos(self, parent):
-        """Crea el contenido de la pestaña platillos"""
+        self._crear_tab_categoria(tab_bebidas, "Bebidas", self.catalogo["BEBIDAS"]["Bebidas"])
+
+    def _crear_tab_categoria(self, parent_tab, categoria_key, productos_lista):
         # Canvas con scroll
-        canvas = tk.Canvas(parent, bg=Colores.FONDO_PRINCIPAL, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
+        canvas = tk.Canvas(parent_tab, bg=Colores.FONDO_PRINCIPAL, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(parent_tab, orient=tk.VERTICAL, command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=Colores.FONDO_PRINCIPAL)
         
         # Crear ventana del canvas
@@ -516,76 +525,23 @@ class CatalogoMenu:
         contenedor = tk.Frame(scrollable_frame, bg=Colores.FONDO_PRINCIPAL)
         contenedor.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Tres columnas - configurar pesos para igual distribución
+        # Grid de 3 columnas
         contenedor.columnconfigure(0, weight=1)
         contenedor.columnconfigure(1, weight=1)
         contenedor.columnconfigure(2, weight=1)
         
-        categorias = ["Entradas", "Fuerte", "Postre"]
-        for idx, categoria in enumerate(categorias):
-            col_frame = tk.Frame(contenedor, bg=Colores.FONDO_PRINCIPAL)
-            col_frame.grid(row=0, column=idx, sticky="nsew", padx=5)
+        for idx, producto in enumerate(productos_lista):
+            row = idx // 3
+            col = idx % 3
+            frame_prod = tk.Frame(contenedor, bg=Colores.FONDO_PRINCIPAL)
+            frame_prod.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
             
-            # Título de categoría
-            titulo_cat = tk.Label(
-                col_frame,
-                text=categoria.upper(),
-                bg=Colores.FONDO_PRINCIPAL,
-                fg=Colores.ACENTO_NARANJA,
-                font=("Segoe UI", 11, "bold")
-            )
-            titulo_cat.pack(pady=(0, 10), fill=tk.X)
-            
-            # Productos de la categoría
-            for producto in self.catalogo["PLATILLOS"][categoria]:
-                tarjeta = TarjetaProducto(col_frame, producto, self.on_agregar)
-                tarjeta.pack(pady=5, fill=tk.BOTH, expand=True)
-                self.tarjetas[producto.id] = tarjeta
-    
-    def _crear_contenido_bebidas(self, parent):
-        """Crea el contenido de la pestaña bebidas"""
-        # Canvas con scroll
-        canvas = tk.Canvas(parent, bg=Colores.FONDO_PRINCIPAL, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=Colores.FONDO_PRINCIPAL)
-        
-        # Crear ventana del canvas
-        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Hacer que scrollable_frame se expanda al ancho del canvas
-        def on_frame_configure(event=None):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            # Expandir frame al ancho del canvas
-            canvas_width = canvas.winfo_width()
-            if canvas_width > 1:
-                canvas.itemconfig(canvas_window, width=canvas_width)
-        
-        scrollable_frame.bind("<Configure>", on_frame_configure)
-        canvas.bind("<Configure>", on_frame_configure)
-        
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Contenedor - usar grid para 2 columnas
-        contenedor = tk.Frame(scrollable_frame, bg=Colores.FONDO_PRINCIPAL)
-        contenedor.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Configurar 2 columnas para bebidas
-        contenedor.columnconfigure(0, weight=1)
-        contenedor.columnconfigure(1, weight=1)
-        
-        # Mostrar bebidas en grid de 2 columnas
-        bebidas = self.catalogo["BEBIDAS"]["Bebidas"]
-        for idx, producto in enumerate(bebidas):
-            row = idx // 2
-            col = idx % 2
-            frame_bebida = tk.Frame(contenedor, bg=Colores.FONDO_PRINCIPAL)
-            frame_bebida.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-            
-            tarjeta = TarjetaProducto(frame_bebida, producto, self.on_agregar)
+            tarjeta = TarjetaProducto(frame_prod, producto, self.on_agregar)
             tarjeta.pack(fill=tk.BOTH, expand=True)
             self.tarjetas[producto.id] = tarjeta
+
+
+
 
 
 class VistaPreviaOrden:
@@ -688,12 +644,30 @@ class VistaPreviaOrden:
         tk.Label(formulario_frame, text="Mesa:", bg=Colores.BLANCO, fg=Colores.TEXTO_OSCURO, font=("Segoe UI", 9)).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.entry_mesa = tk.Entry(formulario_frame, font=("Segoe UI", 9), width=10)
         self.entry_mesa.grid(row=0, column=1, sticky=tk.EW, padx=5)
+        self.entry_mesa.config(state="readonly")
         
         tk.Label(formulario_frame, text="Comensales:", bg=Colores.BLANCO, fg=Colores.TEXTO_OSCURO, font=("Segoe UI", 9)).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.entry_comensales = tk.Entry(formulario_frame, font=("Segoe UI", 9), width=10)
         self.entry_comensales.grid(row=1, column=1, sticky=tk.EW, padx=5)
+        self.entry_comensales.config(state="readonly")
         
         formulario_frame.columnconfigure(1, weight=1)
+        
+        # Botón Agregar Extra
+        self.btn_extra = tk.Button(
+            self.frame,
+            text="➕ Agregar Extra",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=self._agregar_extra
+        )
+        self.btn_extra.pack(fill=tk.X, padx=10, pady=(5, 5))
         
         # Botón confirmar
         self.btn_confirmar = tk.Button(
@@ -728,6 +702,76 @@ class VistaPreviaOrden:
         )
         self.btn_limpiar.pack(fill=tk.X, padx=10, pady=(0, 10))
     
+    def establecer_mesa_comensales(self, mesa, comensales):
+        """Establece los valores de mesa y comensales en modo lectura"""
+        self.entry_mesa.config(state=tk.NORMAL)
+        self.entry_comensales.config(state=tk.NORMAL)
+        self.entry_mesa.delete(0, tk.END)
+        self.entry_comensales.delete(0, tk.END)
+        self.entry_mesa.insert(0, str(mesa))
+        self.entry_comensales.insert(0, str(comensales))
+        self.entry_mesa.config(state="readonly")
+        self.entry_comensales.config(state="readonly")
+
+    def _agregar_extra(self):
+        """Abre un diálogo emergente para ingresar un artículo extra"""
+        popup = tk.Toplevel(self.frame)
+        popup.title("Agregar Artículo Extra")
+        popup.geometry("300x200")
+        popup.resizable(False, False)
+        popup.config(bg=Colores.FONDO_PRINCIPAL)
+        popup.transient(self.frame.winfo_toplevel())
+        popup.grab_set()
+        
+        # Center popup
+        popup.update_idletasks()
+        x = self.frame.winfo_toplevel().winfo_rootx() + (self.frame.winfo_toplevel().winfo_width() // 2) - 150
+        y = self.frame.winfo_toplevel().winfo_rooty() + (self.frame.winfo_toplevel().winfo_height() // 2) - 100
+        popup.geometry(f"+{x}+{y}")
+        
+        tk.Label(popup, text="Nombre del Extra:", font=("Segoe UI", 9, "bold"), bg=Colores.FONDO_PRINCIPAL, fg=Colores.TEXTO_OSCURO).pack(pady=(15, 2))
+        entry_nombre = tk.Entry(popup, font=("Segoe UI", 10), width=25)
+        entry_nombre.pack(pady=2)
+        entry_nombre.focus_set()
+        
+        tk.Label(popup, text="Precio ($):", font=("Segoe UI", 9, "bold"), bg=Colores.FONDO_PRINCIPAL, fg=Colores.TEXTO_OSCURO).pack(pady=(10, 2))
+        entry_precio = tk.Entry(popup, font=("Segoe UI", 10), width=10, justify=tk.CENTER)
+        entry_precio.pack(pady=2)
+        entry_precio.insert(0, "0.00")
+        
+        def confirmar():
+            nombre = entry_nombre.get().strip()
+            precio_str = entry_precio.get().strip()
+            if not nombre:
+                messagebox.showerror("Error", "Ingrese el nombre del artículo extra", parent=popup)
+                return
+            try:
+                precio = float(precio_str)
+                if precio < 0:
+                    raise ValueError
+            except ValueError:
+                messagebox.showerror("Error", "Ingrese un precio numérico válido mayor o igual a 0", parent=popup)
+                return
+                
+            # Generar un ID único para el extra
+            extra_id = 1000 + len(self.items_orden)
+            prod_extra = Producto(
+                id=extra_id,
+                nombre=f"[Extra] {nombre}",
+                descripcion="Artículo extra agregado manualmente",
+                precio=precio,
+                categoria="Extra",
+                receta={}
+            )
+            self.agregar_producto(prod_extra)
+            popup.destroy()
+            
+        btn_frame = tk.Frame(popup, bg=Colores.FONDO_PRINCIPAL)
+        btn_frame.pack(pady=15)
+        
+        tk.Button(btn_frame, text="Agregar", bg=Colores.ACENTO_NARANJA, fg=Colores.BLANCO, font=("Segoe UI", 9, "bold"), relief=tk.FLAT, bd=0, padx=10, pady=5, cursor="hand2", command=confirmar).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Cancelar", bg=Colores.GRIS_INACTIVO, fg=Colores.BLANCO, font=("Segoe UI", 9, "bold"), relief=tk.FLAT, bd=0, padx=10, pady=5, cursor="hand2", command=popup.destroy).pack(side=tk.RIGHT, padx=10)
+
     def agregar_producto(self, producto):
         """Agrega un producto a la orden"""
         # Eliminar etiqueta de vacío
@@ -819,8 +863,12 @@ class VistaPreviaOrden:
     def _confirmar_orden(self):
         """Confirma y guarda la orden"""
         try:
-            mesa = int(self.entry_mesa.get())
-            comensales = int(self.entry_comensales.get())
+            mesa_str = self.entry_mesa.get()
+            comensales_str = self.entry_comensales.get()
+            if not mesa_str or not comensales_str:
+                raise ValueError()
+            mesa = int(mesa_str)
+            comensales = int(comensales_str)
         except ValueError:
             messagebox.showerror("Error", "Por favor ingrese mesa y comensales válidos")
             return
@@ -839,16 +887,21 @@ class VistaPreviaOrden:
     def _limpiar_orden(self):
         """Limpia la orden actual"""
         self.items_orden = {}  # Reinicializar diccionario
+        self.entry_mesa.config(state=tk.NORMAL)
+        self.entry_comensales.config(state=tk.NORMAL)
         self.entry_mesa.delete(0, tk.END)
         self.entry_comensales.delete(0, tk.END)
+        self.entry_mesa.config(state="readonly")
+        self.entry_comensales.config(state="readonly")
         self._actualizar_vista()
 
 
 class ControlMesas:
     """Sección de control de mesas"""
     
-    def __init__(self, parent):
+    def __init__(self, parent, on_seleccionar_mesa):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
+        self.on_seleccionar_mesa = on_seleccionar_mesa
         
         self._crear_interfaz()
     
@@ -875,7 +928,7 @@ class ControlMesas:
         for mesa in range(1, 17):  # 16 mesas
             btn = tk.Button(
                 contenedor,
-                text=f"Mesa {mesa}",
+                text=f"Mesa {mesa}\n(Disponible)",
                 bg=Colores.BLANCO,
                 fg=Colores.TEXTO_OSCURO,
                 font=("Segoe UI", 11, "bold"),
@@ -883,9 +936,14 @@ class ControlMesas:
                 bd=1,
                 width=15,
                 height=5,
-                cursor="hand2"
+                cursor="hand2",
+                command=lambda m=mesa: self._mesa_click(m)
             )
             btn.grid(row=(mesa-1)//4, column=(mesa-1)%4, padx=10, pady=10)
+
+    def _mesa_click(self, mesa_num):
+        """Maneja el clic en una mesa"""
+        self.on_seleccionar_mesa(mesa_num)
 
 
 class ConfirmacionOrden:
@@ -1333,6 +1391,573 @@ class Configuracion:
             "© 2026 - Todos los derechos reservados"
         )
 
+# ==================== NUEVAS CLASES PARA EL FLUJO INTERACTIVO ====================
+
+class DialogoComensales(tk.Toplevel):
+    """Diálogo emergente moderno para ingresar la cantidad de comensales"""
+    def __init__(self, parent, mesa_num, callback):
+        super().__init__(parent)
+        self.title(f"Mesa {mesa_num}")
+        self.geometry("350x220")
+        self.resizable(False, False)
+        self.config(bg=Colores.FONDO_PRINCIPAL)
+        self.transient(parent)
+        self.grab_set()
+        
+        self.callback = callback
+        self.mesa_num = mesa_num
+        
+        # Centrar el diálogo relativo al padre
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (width // 2)
+        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (height // 2)
+        self.geometry(f"+{x}+{y}")
+        
+        # Elementos de Interfaz
+        lbl_info = tk.Label(
+            self,
+            text=f"🍽️ Mesa {mesa_num}\nIngrese el número de comensales:",
+            font=("Segoe UI", 11, "bold"),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO,
+            pady=15
+        )
+        lbl_info.pack()
+        
+        self.entry_comensales = tk.Entry(
+            self,
+            font=("Segoe UI", 12),
+            justify=tk.CENTER,
+            width=10,
+            bd=1,
+            relief=tk.SOLID
+        )
+        self.entry_comensales.pack(pady=5)
+        self.entry_comensales.insert(0, "2")  # Por defecto 2 comensales
+        self.entry_comensales.focus_set()
+        self.entry_comensales.selection_range(0, tk.END)
+        
+        # Vincular la tecla Enter
+        self.bind("<Return>", lambda e: self._confirmar())
+        
+        btn_frame = tk.Frame(self, bg=Colores.FONDO_PRINCIPAL)
+        btn_frame.pack(pady=15)
+        
+        btn_aceptar = tk.Button(
+            btn_frame,
+            text="Aceptar",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=5,
+            command=self._confirmar,
+            cursor="hand2"
+        )
+        btn_aceptar.pack(side=tk.LEFT, padx=10)
+        
+        btn_cancelar = tk.Button(
+            btn_frame,
+            text="Cancelar",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=5,
+            command=self.destroy,
+            cursor="hand2"
+        )
+        btn_cancelar.pack(side=tk.RIGHT, padx=10)
+        
+    def _confirmar(self):
+        val = self.entry_comensales.get().strip()
+        try:
+            comensales = int(val)
+            if comensales < 1 or comensales > 20:
+                raise ValueError()
+            self.callback(self.mesa_num, comensales)
+            self.destroy()
+        except ValueError:
+            messagebox.showerror(
+                "Error",
+                "Por favor ingrese un número de comensales válido (entre 1 y 20)",
+                parent=self
+            )
+
+
+class Portada:
+    """Pantalla de inicio / portada del restaurante"""
+    
+    def __init__(self, parent, on_ingresar_callback, on_admin_callback):
+        self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
+        self.on_ingresar = on_ingresar_callback
+        self.on_admin = on_admin_callback
+        
+        self._crear_interfaz()
+        
+    def _crear_interfaz(self):
+        # Tarjeta contenedor centrada
+        card = tk.Frame(
+            self.frame,
+            bg=Colores.BLANCO,
+            relief=tk.FLAT,
+            bd=0,
+            highlightbackground=Colores.BORDE_GRIS,
+            highlightthickness=1
+        )
+        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=500, height=520)
+        
+        # Logo o Emoji
+        logo_label = tk.Label(card, bg=Colores.BLANCO)
+        logo_label.pack(pady=(40, 10))
+        
+        # Intentar cargar icono_restaurante.png si existe
+        self.img_ref = None
+        if os.path.exists("icono_restaurante.png"):
+            try:
+                img = Image.open("icono_restaurante.png")
+                img = img.resize((100, 100), Image.Resampling.LANCZOS)
+                self.img_ref = ImageTk.PhotoImage(img)
+                logo_label.config(image=self.img_ref)
+            except Exception as e:
+                print(f"Error cargando logo en portada: {e}")
+                logo_label.config(text="🍽️", font=("Segoe UI", 60), fg=Colores.ACENTO_NARANJA)
+        else:
+            logo_label.config(text="🍽️", font=("Segoe UI", 60), fg=Colores.ACENTO_NARANJA)
+            
+        titulo = tk.Label(
+            card,
+            text="SISTEMA RESTAURANTE",
+            font=("Segoe UI", 16, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO
+        )
+        titulo.pack(pady=5)
+        
+        subtitulo = tk.Label(
+            card,
+            text="Bienvenido, por favor ingrese sus datos para comenzar",
+            font=("Segoe UI", 9, "italic"),
+            bg=Colores.BLANCO,
+            fg=Colores.GRIS_INACTIVO
+        )
+        subtitulo.pack(pady=(0, 20))
+        
+        # Formulario
+        form_frame = tk.Frame(card, bg=Colores.BLANCO)
+        form_frame.pack(fill=tk.X, padx=50)
+        
+        lbl_nombre = tk.Label(
+            form_frame,
+            text="Nombre del Comensal Principal:",
+            font=("Segoe UI", 10, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            anchor=tk.W
+        )
+        lbl_nombre.pack(fill=tk.X, pady=(10, 2))
+        
+        self.entry_nombre = tk.Entry(
+            form_frame,
+            font=("Segoe UI", 11),
+            bd=1,
+            relief=tk.SOLID
+        )
+        self.entry_nombre.pack(fill=tk.X, ipady=5, pady=(0, 10))
+        
+        lbl_apellido = tk.Label(
+            form_frame,
+            text="Apellido del Comensal Principal:",
+            font=("Segoe UI", 10, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            anchor=tk.W
+        )
+        lbl_apellido.pack(fill=tk.X, pady=(10, 2))
+        
+        self.entry_apellido = tk.Entry(
+            form_frame,
+            font=("Segoe UI", 11),
+            bd=1,
+            relief=tk.SOLID
+        )
+        self.entry_apellido.pack(fill=tk.X, ipady=5, pady=(0, 20))
+        
+        # Botón Ingresar
+        btn_ingresar = tk.Button(
+            card,
+            text="Ingresar al Sistema",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 11, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            cursor="hand2",
+            command=self._ingresar
+        )
+        btn_ingresar.pack(fill=tk.X, padx=50, ipady=8, pady=10)
+        
+        # Botón Admin (discreto en la parte inferior derecha)
+        btn_admin = tk.Button(
+            card,
+            text="🔑 Acceso Admin",
+            bg=Colores.BLANCO,
+            fg=Colores.GRIS_INACTIVO,
+            font=("Segoe UI", 8),
+            relief=tk.FLAT,
+            bd=0,
+            cursor="hand2",
+            command=self._admin_click
+        )
+        btn_admin.place(x=400, y=485)
+        
+    def _ingresar(self):
+        nombre = self.entry_nombre.get().strip()
+        apellido = self.entry_apellido.get().strip()
+        
+        if not nombre or not apellido:
+            messagebox.showerror("Error", "Por favor ingrese su nombre y apellido")
+            return
+            
+        self.on_ingresar(nombre, apellido)
+        
+    def _admin_click(self):
+        self.on_admin()
+
+
+class PantallaPago:
+    """Pantalla para confirmación del pago y datos de facturación"""
+    
+    def __init__(self, parent, total, cliente_nombre, cliente_apellido, items_orden, on_cancelar_callback, on_pagar_callback):
+        self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
+        self.total = total
+        self.cliente_nombre = cliente_nombre
+        self.cliente_apellido = cliente_apellido
+        self.items_orden = items_orden
+        self.on_cancelar = on_cancelar_callback
+        self.on_pagar = on_pagar_callback
+        
+        self.metodo_pago = tk.StringVar(value="Efectivo")
+        
+        self._crear_interfaz()
+        
+    def _crear_interfaz(self):
+        # Card contenedor
+        card = tk.Frame(
+            self.frame,
+            bg=Colores.BLANCO,
+            relief=tk.FLAT,
+            bd=0,
+            highlightbackground=Colores.BORDE_GRIS,
+            highlightthickness=1
+        )
+        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=600, height=580)
+        
+        # Encabezado de Pago
+        header = tk.Label(
+            card,
+            text="💳 DETALLE DE PAGO Y FACTURACIÓN",
+            font=("Segoe UI", 14, "bold"),
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            pady=15
+        )
+        header.pack(fill=tk.X)
+        
+        # Info del comensal principal
+        info_cliente = tk.Label(
+            card,
+            text=f"Cliente Principal: {self.cliente_nombre} {self.cliente_apellido}",
+            font=("Segoe UI", 11, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            pady=10
+        )
+        info_cliente.pack()
+        
+        # Contenedor de Detalle de Items
+        items_card = tk.Frame(card, bg=Colores.FONDO_PRINCIPAL, bd=1, relief=tk.SOLID)
+        items_card.pack(fill=tk.BOTH, expand=True, padx=40, pady=10)
+        
+        # Scroll para items si hay muchos
+        canvas = tk.Canvas(items_card, bg=Colores.FONDO_PRINCIPAL, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(items_card, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=Colores.FONDO_PRINCIPAL)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Insertar items en la vista
+        for id_prod, datos in self.items_orden.items():
+            prod = datos["producto"]
+            cant = datos["cantidad"]
+            sub = prod.precio * cant
+            
+            lbl_item = tk.Label(
+                scrollable_frame,
+                text=f"{prod.nombre} x{cant:<3}   ${sub:.2f}",
+                font=("Courier New", 10),
+                bg=Colores.FONDO_PRINCIPAL,
+                fg=Colores.TEXTO_OSCURO,
+                anchor=tk.W,
+                justify=tk.LEFT,
+                pady=2
+            )
+            lbl_item.pack(fill=tk.X, padx=10)
+            
+        # Total destacado
+        lbl_total = tk.Label(
+            card,
+            text=f"Total Consumido: ${self.total:.2f}",
+            font=("Segoe UI", 14, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.ACENTO_NARANJA,
+            pady=10
+        )
+        lbl_total.pack()
+        
+        # Formulario de Facturación
+        form_frame = tk.Frame(card, bg=Colores.BLANCO)
+        form_frame.pack(fill=tk.X, padx=40, pady=10)
+        
+        lbl_factura = tk.Label(
+            form_frame,
+            text="Nombre para Facturación:",
+            font=("Segoe UI", 10, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO
+        )
+        lbl_factura.grid(row=0, column=0, sticky=tk.W, pady=5)
+        
+        self.entry_factura = tk.Entry(
+            form_frame,
+            font=("Segoe UI", 10),
+            bd=1,
+            relief=tk.SOLID,
+            width=30
+        )
+        self.entry_factura.grid(row=0, column=1, sticky=tk.W, padx=10, pady=5)
+        # Por defecto, el comensal principal
+        self.entry_factura.insert(0, f"{self.cliente_nombre} {self.cliente_apellido}")
+        
+        # Método de Pago
+        lbl_metodo = tk.Label(
+            form_frame,
+            text="Método de Pago:",
+            font=("Segoe UI", 10, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO
+        )
+        lbl_metodo.grid(row=1, column=0, sticky=tk.W, pady=5)
+        
+        radio_frame = tk.Frame(form_frame, bg=Colores.BLANCO)
+        radio_frame.grid(row=1, column=1, sticky=tk.W, padx=10, pady=5)
+        
+        rb_efectivo = tk.Radiobutton(
+            radio_frame,
+            text="Efectivo",
+            variable=self.metodo_pago,
+            value="Efectivo",
+            font=("Segoe UI", 9),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            activebackground=Colores.BLANCO,
+            cursor="hand2"
+        )
+        rb_efectivo.pack(side=tk.LEFT, padx=5)
+        
+        rb_tarjeta = tk.Radiobutton(
+            radio_frame,
+            text="Tarjeta",
+            variable=self.metodo_pago,
+            value="Tarjeta",
+            font=("Segoe UI", 9),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            activebackground=Colores.BLANCO,
+            cursor="hand2"
+        )
+        rb_tarjeta.pack(side=tk.LEFT, padx=5)
+        
+        # Botones de Acción
+        btn_frame = tk.Frame(card, bg=Colores.BLANCO)
+        btn_frame.pack(fill=tk.X, padx=40, pady=20)
+        
+        btn_pagar = tk.Button(
+            btn_frame,
+            text="Finalizar y Pagar",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 11, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            cursor="hand2",
+            padx=20,
+            pady=8,
+            command=self._pagar
+        )
+        btn_pagar.pack(side=tk.RIGHT, padx=5)
+        
+        btn_cancelar = tk.Button(
+            btn_frame,
+            text="Atrás (Modificar Pedido)",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 11, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            cursor="hand2",
+            padx=20,
+            pady=8,
+            command=self.on_cancelar
+        )
+        btn_cancelar.pack(side=tk.LEFT, padx=5)
+        
+    def _pagar(self):
+        nombre_fact = self.entry_factura.get().strip()
+        if not nombre_fact:
+            messagebox.showerror("Error", "Por favor ingrese el nombre para la facturación")
+            return
+            
+        metodo = self.metodo_pago.get()
+        self.on_pagar(nombre_fact, metodo)
+
+
+class PantallaFactura:
+    """Pantalla que simula una factura de restaurante y muestra el ticket final"""
+    
+    def __init__(self, parent, id_orden, total, cliente_nombre, cliente_apellido, facturado_a, metodo_pago, mesa, comensales, items_orden, on_inicio_callback):
+        self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
+        self.id_orden = id_orden
+        self.total = total
+        self.cliente_nombre = cliente_nombre
+        self.cliente_apellido = cliente_apellido
+        self.facturado_a = facturado_a
+        self.metodo_pago = metodo_pago
+        self.mesa = mesa
+        self.comensales = comensales
+        self.items_orden = items_orden
+        self.on_inicio = on_inicio_callback
+        
+        self._crear_interfaz()
+        
+    def _crear_interfaz(self):
+        # Card contenedor
+        card = tk.Frame(
+            self.frame,
+            bg=Colores.BLANCO,
+            relief=tk.FLAT,
+            bd=0,
+            highlightbackground=Colores.BORDE_GRIS,
+            highlightthickness=1
+        )
+        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=500, height=650)
+        
+        # Encabezado
+        header = tk.Label(
+            card,
+            text="🧾 FACTURA DE VENTA",
+            font=("Segoe UI", 12, "bold"),
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            pady=10
+        )
+        header.pack(fill=tk.X)
+        
+        # Simulación de Ticket Físico
+        ticket = tk.Frame(
+            card,
+            bg=Colores.BLANCO,
+            bd=1,
+            relief=tk.SOLID,
+            highlightbackground=Colores.BORDE_GRIS
+        )
+        ticket.pack(fill=tk.BOTH, expand=True, padx=40, pady=15)
+        
+        # Contenido del Ticket (ScrolledText o Labels con tipografía Courier)
+        ticket_text = scrolledtext.ScrolledText(
+            ticket,
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Courier New", 9),
+            relief=tk.FLAT,
+            bd=0,
+            padx=10,
+            pady=10
+        )
+        ticket_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Generar texto de la factura
+        fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        lines = []
+        lines.append("="*46)
+        lines.append("🍽️  RESTAURANTE DELICIAS GOURMET  🍽️")
+        lines.append("        Calle Principal #123, Tegucigalpa")
+        lines.append(f" Fecha: {fecha_actual}")
+        lines.append(f" Factura No: #F-{self.id_orden:06d}")
+        lines.append("-"*46)
+        lines.append(f" Comensal Principal: {self.cliente_nombre} {self.cliente_apellido}")
+        lines.append(f" Facturado a:        {self.facturado_a}")
+        lines.append(f" Mesa: {self.mesa:<14} Comensales: {self.comensales}")
+        lines.append("="*46)
+        lines.append(f"{' Cant x Item':<28}{'Precio':<8}{'Total':>8}")
+        lines.append("-"*46)
+        
+        for id_prod, datos in self.items_orden.items():
+            prod = datos["producto"]
+            cant = datos["cantidad"]
+            sub = prod.precio * cant
+            
+            # Formatear línea del item
+            item_desc = f" {cant}x {prod.nombre}"
+            if len(item_desc) > 26:
+                item_desc = item_desc[:23] + "..."
+                
+            lines.append(f"{item_desc:<28}${prod.precio:<7.2f}${sub:>7.2f}")
+            
+        lines.append("-"*46)
+        lines.append(f"{' SUBTOTAL:':<36}${self.total:>7.2f}")
+        lines.append(f"{' IMPUESTO (15% Incl.):':<36}${self.total*0.15:>7.2f}")
+        lines.append(f"{' TOTAL A PAGAR:':<36}${self.total:>7.2f}")
+        lines.append("="*46)
+        lines.append(f" Método de Pago: {self.metodo_pago}")
+        lines.append("\n          ¡GRACIAS POR SU PREFERENCIA!          ")
+        lines.append("="*46)
+        
+        # Insertar en el widget
+        ticket_text.insert(tk.END, "\n".join(lines))
+        ticket_text.config(state=tk.DISABLED)
+        
+        # Botón Volver al Inicio
+        btn_inicio = tk.Button(
+            card,
+            text="Nuevo Cliente / Volver al Inicio",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 11, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            cursor="hand2",
+            padx=20,
+            pady=10,
+            command=self.on_inicio
+        )
+        btn_inicio.pack(fill=tk.X, padx=40, pady=(0, 20))
+
 
 class AplicacionRestaurante:
     """Aplicación principal del sistema de restaurante"""
@@ -1347,74 +1972,191 @@ class AplicacionRestaurante:
         self.db = BaseDatos("restaurante_db.txt")
         self.inventario = Inventario()
         
+        # Estados del flujo interactivo
+        self.cliente_nombre = ""
+        self.cliente_apellido = ""
+        self.mesa_seleccionada = None
+        self.comensales_seleccionados = 0
+        self.admin_mode = False
+        
         # Contenedor principal
         self.main_container = tk.Frame(self.root, bg=Colores.FONDO_PRINCIPAL)
         self.main_container.pack(fill=tk.BOTH, expand=True)
         
-        # Inicializar secciones ANTES de crear BarraLateral
+        # Inicializar secciones
         self.secciones = {}
         
-        # Contenedor para las secciones
+        # Contenedor para las secciones (derecha del sidebar si está visible)
         self.content_container = tk.Frame(self.main_container, bg=Colores.FONDO_PRINCIPAL)
         self.content_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # Crear secciones
         self._crear_secciones()
         
-        # Crear barra lateral (después de inicializar secciones)
+        # Crear barra lateral (oculta por defecto en flujo cliente)
         self.sidebar = BarraLateral(self.main_container, self._on_nav_select)
+        self.sidebar.frame.pack_forget()
         
-        # Mostrar sección inicial
-        self._mostrar_seccion("catalogo")
+        # Mostrar sección inicial (Portada)
+        self._mostrar_seccion("portada")
     
     def _crear_secciones(self):
         """Crea todas las secciones de la aplicación"""
-        # Sección de catálogo (con vista previa de orden)
+        # Portada
+        self.secciones["portada"] = Portada(
+            self.content_container,
+            on_ingresar_callback=self._on_ingresar_portada,
+            on_admin_callback=self._on_acceso_admin
+        ).frame
+        
+        # Control de Mesas (con callback de selección)
+        self.secciones["mesas"] = ControlMesas(
+            self.content_container,
+            on_seleccionar_mesa=self._on_seleccionar_mesa
+        ).frame
+        
+        # Catálogo de menú (con vista previa de orden)
         frame_catalogo_container = tk.Frame(self.content_container, bg=Colores.FONDO_PRINCIPAL)
-        
         self.catalogo = CatalogoMenu(frame_catalogo_container, self._agregar_a_orden)
-        self.vista_previa = VistaPreviaOrden(frame_catalogo_container, self._confirmar_orden)
+        self.vista_previa = VistaPreviaOrden(frame_catalogo_container, self._confirmar_orden_flow)
         
-        # Empaquetar los frames dentro del contenedor
         self.catalogo.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.vista_previa.frame.pack(side=tk.RIGHT, fill=tk.BOTH, padx=10, pady=10)
-        
         self.secciones["catalogo"] = frame_catalogo_container
         
-        # Otras secciones
-        self.secciones["mesas"] = ControlMesas(self.content_container).frame
-        
+        # Secciones administrativas
         self.inventario_control = InventarioControl(self.content_container, self)
         self.secciones["inventario"] = self.inventario_control.frame
-
         self.secciones["confirmacion"] = ConfirmacionOrden(self.content_container, self.db).frame
-
         self.secciones["historial"] = HistorialControl(self.content_container, self.db).frame
+        self.secciones["configuracion"] = Configuracion(self.content_container).frame
 
     def _on_nav_select(self, codigo_seccion):
-        """Callback cuando se selecciona una opción de navegación"""
-        self._mostrar_seccion(codigo_seccion)
+        """Callback cuando se selecciona una opción de navegación en el sidebar"""
+        if codigo_seccion == "salir_admin":
+            self.admin_mode = False
+            self.sidebar._activar_boton("catalogo", "Catálogo de Menú")
+            self._mostrar_seccion("portada")
+        else:
+            self._mostrar_seccion(codigo_seccion)
 
     def _mostrar_seccion(self, codigo_seccion):
-        """Muestra la sección seleccionada"""
+        """Muestra la sección seleccionada y administra el sidebar"""
+        if hasattr(self, "sidebar") and self.sidebar:
+            if self.admin_mode:
+                # Asegurar que el sidebar esté visible en la parte izquierda
+                self.sidebar.frame.pack(side=tk.LEFT, fill=tk.Y)
+                self.content_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            else:
+                # Flujo cliente: ocultar sidebar
+                self.sidebar.frame.pack_forget()
+                self.content_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            
         for codigo, frame in self.secciones.items():
             if codigo == codigo_seccion:
-                if not frame.winfo_viewable():
-                    frame.pack(fill=tk.BOTH, expand=True)
+                frame.pack(fill=tk.BOTH, expand=True)
             else:
-                if frame.winfo_viewable():
-                    frame.pack_forget()
+                frame.pack_forget()
     
+    def _on_ingresar_portada(self, nombre, apellido):
+        """Maneja el ingreso desde la portada y pasa a la selección de mesas"""
+        self.cliente_nombre = nombre
+        self.cliente_apellido = apellido
+        self.vista_previa._limpiar_orden()
+        self._mostrar_seccion("mesas")
+        
+    def _on_acceso_admin(self):
+        """Valida contraseña y activa el panel administrativo"""
+        popup = tk.Toplevel(self.root)
+        popup.title("Acceso Admin")
+        popup.geometry("300x160")
+        popup.resizable(False, False)
+        popup.config(bg=Colores.FONDO_PRINCIPAL)
+        popup.transient(self.root)
+        popup.grab_set()
+        
+        popup.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 150
+        y = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 80
+        popup.geometry(f"+{x}+{y}")
+        
+        tk.Label(
+            popup,
+            text="Contraseña de Administrador:\n(Por defecto: 1234)",
+            font=("Segoe UI", 9, "bold"),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO
+        ).pack(pady=15)
+        
+        entry_pass = tk.Entry(popup, font=("Segoe UI", 10), show="*", width=15, justify=tk.CENTER)
+        entry_pass.pack(pady=2)
+        entry_pass.focus_set()
+        
+        def comprobar():
+            passwd = entry_pass.get().strip()
+            if passwd == "1234" or passwd == "":
+                self.admin_mode = True
+                self._mostrar_seccion("historial")  # ir a historial en admin por defecto
+                popup.destroy()
+            else:
+                messagebox.showerror("Error", "Contraseña incorrecta", parent=popup)
+                
+        btn_frame = tk.Frame(popup, bg=Colores.FONDO_PRINCIPAL)
+        btn_frame.pack(pady=15)
+        
+        tk.Button(btn_frame, text="Aceptar", bg=Colores.ACENTO_NARANJA, fg=Colores.BLANCO, font=("Segoe UI", 9, "bold"), relief=tk.FLAT, bd=0, padx=10, pady=5, cursor="hand2", command=comprobar).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Cancelar", bg=Colores.GRIS_INACTIVO, fg=Colores.BLANCO, font=("Segoe UI", 9, "bold"), relief=tk.FLAT, bd=0, padx=10, pady=5, cursor="hand2", command=popup.destroy).pack(side=tk.RIGHT, padx=10)
+        
+    def _on_seleccionar_mesa(self, mesa_num):
+        """Maneja el clic en una mesa y abre el diálogo de comensales"""
+        if self.admin_mode:
+            messagebox.showinfo("Información", f"Mesa {mesa_num} seleccionada. En modo administrativo no se procesan comensales.")
+            return
+            
+        DialogoComensales(self.root, mesa_num, self._on_confirmar_mesa_comensales)
+        
+    def _on_confirmar_mesa_comensales(self, mesa_num, comensales_num):
+        """Establece la mesa y comensales seleccionados, y avanza al menú"""
+        self.mesa_seleccionada = mesa_num
+        self.comensales_seleccionados = comensales_num
+        self.vista_previa.establecer_mesa_comensales(mesa_num, comensales_num)
+        self._mostrar_seccion("catalogo")
+        
     def _agregar_a_orden(self, producto):
         """Agrega un producto a la vista previa de orden"""
         self.vista_previa.agregar_producto(producto)
-    
-    def _confirmar_orden(self, mesa, comensales, items, total):
-        """Confirma y guarda una orden"""
+        
+    def _confirmar_orden_flow(self, mesa, comensales, items, total):
+        """Abre la pantalla de pago y facturación"""
+        self.current_order_items = items
+        self.current_order_total = total
+        
+        if "pago" in self.secciones:
+            self.secciones["pago"].pack_forget()
+            
+        self.pantalla_pago = PantallaPago(
+            self.content_container,
+            total,
+            self.cliente_nombre,
+            self.cliente_apellido,
+            self.vista_previa.items_orden,
+            on_cancelar_callback=lambda: self._mostrar_seccion("catalogo"),
+            on_pagar_callback=self._procesar_pago
+        )
+        self.secciones["pago"] = self.pantalla_pago.frame
+        self._mostrar_seccion("pago")
+        
+    def _procesar_pago(self, facturado_a, metodo_pago):
+        """Procesa el pago, descuenta stock, guarda la orden en la BD y muestra la factura"""
+        items_lista = self.current_order_items
+        total = self.current_order_total
+        mesa = self.mesa_seleccionada
+        comensales = self.comensales_seleccionados
+        
         try:
             # Descontar ingredientes del inventario por cada platillo vendido
             receta_total = {}
-            for producto, cantidad in items:
+            for producto, cantidad in items_lista:
                 for nombre, valor in producto.receta.items():
                     receta_total[nombre] = receta_total.get(nombre, 0) + valor * cantidad
 
@@ -1432,26 +2174,54 @@ class AplicacionRestaurante:
             id_orden=id_orden,
             mesa=mesa,
             comensales=comensales,
-            items=items,
+            items=items_lista,
             total=total,
             fecha=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         
         # Guardar en BD
         if self.db.guardar_orden(orden):
-            messagebox.showinfo("Éxito", f"Orden #{id_orden} guardada correctamente para la mesa {mesa}")
-            self.vista_previa._limpiar_orden()
-            
+            # Refrescar listados administrativos
             if "confirmacion" in self.secciones:
                 self._actualizar_confirmacion()
             if hasattr(self, "inventario_control"):
                 self.inventario_control.actualizar_tabla()
+            if "historial" in self.secciones:
+                # Recargar tabla de historial
+                self.secciones["historial"] = HistorialControl(self.content_container, self.db).frame
+                
+            # Crear y mostrar Factura
+            if "factura" in self.secciones:
+                self.secciones["factura"].pack_forget()
+                
+            self.pantalla_factura = PantallaFactura(
+                self.content_container,
+                id_orden,
+                total,
+                self.cliente_nombre,
+                self.cliente_apellido,
+                facturado_a,
+                metodo_pago,
+                mesa,
+                comensales,
+                self.vista_previa.items_orden,
+                on_inicio_callback=self._volver_al_inicio
+            )
+            self.secciones["factura"] = self.pantalla_factura.frame
+            self._mostrar_seccion("factura")
         else:
             messagebox.showerror("Error", "No se pudo guardar la orden")
-    
+            
+    def _volver_al_inicio(self):
+        """Reinicia los datos de cliente y regresa a la portada"""
+        self.cliente_nombre = ""
+        self.cliente_apellido = ""
+        self.mesa_seleccionada = None
+        self.comensales_seleccionados = 0
+        self.vista_previa._limpiar_orden()
+        self._mostrar_seccion("portada")
+
     def _actualizar_confirmacion(self):
-        """Actualiza la sección de confirmación"""
-        # Esta función se llamaría para refrescar la vista de confirmación
         pass
 
 
