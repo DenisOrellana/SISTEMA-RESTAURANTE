@@ -416,11 +416,12 @@ class TarjetaProducto:
         img_label = tk.Label(img_frame, bg=Colores.ACENTO_NARANJA)
         img_label.pack(expand=True)
         
-        # Intentar cargar la imagen
+        # Intentar cargar la imagen usando la ruta adecuada (script o .exe)
         self.img_ref = None  # Referencia para mantener la imagen en memoria
         try:
-            if os.path.exists(producto.imagen):
-                img = Image.open(producto.imagen)
+            imagen_ruta = obtener_ruta_recurso(producto.imagen)
+            if os.path.exists(imagen_ruta):
+                img = Image.open(imagen_ruta)
                 img.thumbnail((220, 150), Image.Resampling.LANCZOS)
                 self.img_ref = ImageTk.PhotoImage(img)
                 img_label.config(image=self.img_ref)
