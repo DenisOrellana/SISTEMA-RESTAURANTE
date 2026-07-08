@@ -13,6 +13,18 @@ from pathlib import Path
 from dataclasses import dataclass, asdict
 from PIL import Image, ImageTk
 import os
+import sys
+
+
+# Función helper para encontrar archivos en modo script o exe
+def obtener_ruta_recurso(nombre_archivo):
+    """Obtiene la ruta correcta del archivo, tanto en modo script como en .exe compilado"""
+    if hasattr(sys, '_MEIPASS'):
+        # Modo .exe compilado con PyInstaller
+        return os.path.join(sys._MEIPASS, nombre_archivo)
+    else:
+        # Modo script Python directo
+        return nombre_archivo
 
 
 # ==================== CONFIGURACIÓN DE COLORES ====================
@@ -1577,9 +1589,10 @@ class Portada:
         
         # Intentar cargar icono_restaurante.png si existe
         self.img_ref = None
-        if os.path.exists("icono_restaurante.png"):
+        icono_png = obtener_ruta_recurso("icono_restaurante.png")
+        if os.path.exists(icono_png):
             try:
-                img = Image.open("icono_restaurante.png")
+                img = Image.open(icono_png)
                 img = img.resize((100, 100), Image.Resampling.LANCZOS)
                 self.img_ref = ImageTk.PhotoImage(img)
                 logo_label.config(image=self.img_ref)
@@ -2028,8 +2041,9 @@ class AplicacionRestaurante:
         
         # Establecer icono de la ventana
         try:
-            if os.path.exists("icono_restaurante.ico"):
-                self.root.iconbitmap("icono_restaurante.ico")
+            icono_ico = obtener_ruta_recurso("icono_restaurante.ico")
+            if os.path.exists(icono_ico):
+                self.root.iconbitmap(icono_ico)
         except Exception as e:
             print(f"Advertencia: No se pudo cargar el icono: {e}")
         

@@ -78,6 +78,7 @@ def construir_exe(ico_path: str) -> bool:
         "--add-data=restaurante_db.txt;.",
         "--add-data=icono_restaurante.svg;.",
         "--add-data=icono_restaurante.ico;.",
+        "--add-data=icono_restaurante.png;.",
         SCRIPT_ENTRADA,
     ]
 
