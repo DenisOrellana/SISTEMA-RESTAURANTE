@@ -17,16 +17,24 @@ import os
 
 # ==================== CONFIGURACIÓN DE COLORES ====================
 class Colores:
-    """Paleta de colores del sistema"""
-    FONDO_PRINCIPAL = "#F5F5F5"      # Gris muy claro
-    FONDO_TARJETAS = "#FFFFFF"        # Blanco puro
-    ACENTO_NARANJA = "#FF9F43"        # Naranja/Ámbar
-    NARANJA_CLARO = "#FFEAD2"         # Naranja claro (hover)
-    NARANJA_OSCURO = "#E67E22"        # Naranja oscuro (active)
-    TEXTO_OSCURO = "#2C3E50"          # Gris oscuro para texto
-    BORDE_GRIS = "#E0E0E0"            # Borde gris claro
-    BLANCO = "#FFFFFF"
-    GRIS_INACTIVO = "#BDC3C7"         # Gris para botones inactivos
+    """Paleta de colores del sistema (Pastel Rosa y Morado)"""
+    FONDO_PRINCIPAL = "#F3EBF6"      # Lavanda/Morado muy claro y suave
+    FONDO_TARJETAS = "#FFFFFF"       # Blanco puro para mantener limpieza
+    
+    # Tonos de Morado/Lavanda (Para encabezados y botones principales)
+    ACENTO_MORADO = "#C3AED6"        # Morado pastel suave (Mesa seleccionada / Encabezados)
+    MORADO_CLARO = "#D9CBF2"         # Morado pastel muy claro (Hover)
+    MORADO_OSCURO = "#A288BA"        # Morado un poco más intenso (Active/Presionado)
+    
+    # Tonos de Rosa Pastel (Para destacar elementos como botones de agregar o precios)
+    ACENTO_ROSA = "#F7D6D8"          # Rosa pastel suave (Precios / Botones +)
+    ROSA_CLARO = "#FFF0F1"           # Rosa sumamente suave (Fondo de detalles/Hover alternativo)
+    ROSA_OSCURO = "#E8B4B8"          # Rosa pastel con más presencia (Active de botones rosa)
+    
+    TEXTO_OSCURO = "#3D3443"         # Gris oscuro con un toque de morado para el texto
+    BORDE_GRIS = "#E5DDE9"           # Gris lila muy tenue para los bordes de los cuadros
+    BLANCO = "#FFFFFF"               
+    GRIS_INACTIVO = "#D2C9D6"        # Morado grisáceo apagado para botones desactivados
 
 
 # ==================== CLASES DE DATOS ====================
