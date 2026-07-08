@@ -5,7 +5,7 @@ a = Analysis(
     ['ejecutar.py'],
     pathex=[],
     binaries=[],
-    datas=[('restaurante_db.txt', '.'), ('icono_restaurante.svg', '.'), ('icono_restaurante.ico', '.')],
+    datas=[('restaurante_db.txt', '.'), ('icono_restaurante.svg', '.'), ('icono_restaurante.ico', '.'), ('icono_restaurante.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

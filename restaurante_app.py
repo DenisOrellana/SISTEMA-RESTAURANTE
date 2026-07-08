@@ -2026,6 +2026,13 @@ class AplicacionRestaurante:
         self.root.geometry("1400x750")
         self.root.config(bg=Colores.FONDO_PRINCIPAL)
         
+        # Establecer icono de la ventana
+        try:
+            if os.path.exists("icono_restaurante.ico"):
+                self.root.iconbitmap("icono_restaurante.ico")
+        except Exception as e:
+            print(f"Advertencia: No se pudo cargar el icono: {e}")
+        
         # Base de datos
         self.db = BaseDatos("restaurante_db.txt")
         self.inventario = Inventario()
