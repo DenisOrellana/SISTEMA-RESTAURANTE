@@ -11,6 +11,30 @@ import sys
 import subprocess
 from pathlib import Path
 
+
+def activar_entorno_virtual_local() -> None:
+    """Reinicia el script usando el Python local de .venv si existe."""
+    base_dir = Path(__file__).parent.resolve()
+    if os.name == "nt":
+        venv_python = base_dir / ".venv" / "Scripts" / "python.exe"
+    else:
+        venv_python = base_dir / ".venv" / "bin" / "python"
+
+    if venv_python.exists():
+        actual_python = Path(sys.executable).resolve()
+        if actual_python != venv_python.resolve():
+            print("[INFO] Se detectó un entorno virtual local .venv.")
+            print("[INFO] Reiniciando con el Python de .venv...")
+            # Usar subprocess.run con la ruta absoluta al script evita problemas
+            # cuando la carpeta del proyecto contiene espacios en el nombre.
+            script_path = str(Path(__file__).resolve())
+            result = subprocess.run([str(venv_python), script_path] + sys.argv[1:])
+            # Reenviar el código de salida del proceso hijo
+            sys.exit(result.returncode)
+
+
+activar_entorno_virtual_local()
+
 # ─────────────────────────────────────────
 # CONFIGURACION
 # ─────────────────────────────────────────
@@ -23,8 +47,8 @@ CARPETA_SALIDA = "dist"
 def instalar_pyinstaller() -> bool:
     """Instala PyInstaller si no esta disponible."""
     try:
-        import PyInstaller
-        print(f"[OK] PyInstaller {PyInstaller.__version__} listo.")
+        from PyInstaller import __version__ as pyinstaller_version
+        print(f"[OK] PyInstaller {pyinstaller_version} listo.")
         return True
     except ImportError:
         print("[*] Instalando PyInstaller...")
