@@ -5,6 +5,21 @@ Tecnología: Python 3.x + Tkinter + TTK
 Descripción: Aplicación completa de gestión de restaurante con GUI moderna
 """
 
+import os
+import sys
+import ctypes
+
+# ─── Establecer AppUserModelID ANTES de importar tkinter ───
+# Windows agrupa ventanas en la barra de tareas por AppUserModelID.
+# Por defecto, Python usa su propio ID y muestra el icono de Python.
+# Al establecer uno único ANTES de crear cualquier ventana,
+# Windows usará el icono que asignemos con iconbitmap/iconphoto.
+try:
+    myappid = 'sistemarestaurante.app.1.0'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except Exception:
+    pass
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
@@ -12,8 +27,6 @@ from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, asdict
 from PIL import Image, ImageTk
-import os
-import sys
 
 
 # Función helper para encontrar archivos en modo script o exe
@@ -25,7 +38,6 @@ def obtener_ruta_recurso(nombre_archivo):
     else:
         # Modo script Python directo
         return nombre_archivo
-
 
 # ==================== CONFIGURACIÓN DE COLORES ====================
 class Colores:
@@ -2039,11 +2051,23 @@ class AplicacionRestaurante:
         self.root.geometry("1400x750")
         self.root.config(bg=Colores.FONDO_PRINCIPAL)
         
-        # Establecer icono de la ventana
+        # Establecer icono de la ventana y barra de tareas
         try:
             icono_ico = obtener_ruta_recurso("icono_restaurante.ico")
+            icono_png = obtener_ruta_recurso("icono_restaurante.png")
+            
+            # iconbitmap para el icono de la barra de título
             if os.path.exists(icono_ico):
                 self.root.iconbitmap(icono_ico)
+            
+            # iconphoto para el icono de la barra de tareas de Windows
+            if os.path.exists(icono_png):
+                img = Image.open(icono_png)
+                # Crear icono grande (48x48) para la barra de tareas
+                img_48 = img.resize((48, 48), Image.LANCZOS)
+                self._taskbar_icon = ImageTk.PhotoImage(img_48)
+                # Aplicar después de que la ventana esté completamente creada
+                self.root.after(10, lambda: self.root.iconphoto(False, self._taskbar_icon))
         except Exception as e:
             print(f"Advertencia: No se pudo cargar el icono: {e}")
         

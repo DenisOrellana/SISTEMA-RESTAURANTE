@@ -4,6 +4,18 @@
 Sistema de Gestión de Restaurante - Versión de Prueba Interactiva
 """
 
+import os
+import sys
+import ctypes
+
+# Establecer AppUserModelID ANTES de importar tkinter
+# para que el icono del restaurante aparezca en la barra de tareas de Windows
+try:
+    myappid = 'sistemarestaurante.app.1.0'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except Exception:
+    pass
+
 import tkinter as tk
 from restaurante_app import AplicacionRestaurante
 
