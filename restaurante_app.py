@@ -72,11 +72,20 @@ class InventarioItem:
 
 class Inventario:
     """Gestiona los ingredientes disponibles y el control de stock"""
+    
+    RUTA_INVENTARIO = "inventario_guardado.json"
 
     def __init__(self):
         self.items = self._cargar_inicial()
 
     def _cargar_inicial(self):
+        """Carga el inventario desde archivo guardado o desde valores iniciales"""
+        # Intentar cargar desde archivo
+        items_cargados = self.cargar_inventario()
+        if items_cargados:
+            return items_cargados
+        
+        # Si no existe archivo, retornar valores iniciales
         return [
             InventarioItem(1, "Pollo", "kg", 20.0, 5.0, "Proveedor Carnes del Valle"),
             InventarioItem(2, "Carne", "kg", 12.0, 4.0, "Proveedor Carnes del Valle"),
@@ -130,6 +139,54 @@ class Inventario:
 
     def agregar_item(self, item):
         self.items.append(item)
+
+    def guardar_inventario(self):
+        """Guarda el estado actual del inventario en un archivo JSON"""
+        try:
+            datos = {
+                "inventario": [
+                    {
+                        "id": item.id,
+                        "nombre": item.nombre,
+                        "unidad": item.unidad,
+                        "cantidad": item.cantidad,
+                        "minimo": item.minimo,
+                        "proveedor": item.proveedor
+                    }
+                    for item in self.items
+                ],
+                "fecha_guardado": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            with open(self.RUTA_INVENTARIO, "w", encoding="utf-8") as f:
+                json.dump(datos, f, ensure_ascii=False, indent=4)
+            return True
+        except Exception as e:
+            print(f"Error al guardar inventario: {e}")
+            return False
+
+    def cargar_inventario(self):
+        """Carga el inventario desde el archivo JSON guardado"""
+        try:
+            ruta = Path(self.RUTA_INVENTARIO)
+            if ruta.exists():
+                with open(self.RUTA_INVENTARIO, "r", encoding="utf-8") as f:
+                    datos = json.load(f)
+                    items = []
+                    for item_data in datos.get("inventario", []):
+                        item = InventarioItem(
+                            id=item_data["id"],
+                            nombre=item_data["nombre"],
+                            unidad=item_data["unidad"],
+                            cantidad=item_data["cantidad"],
+                            minimo=item_data["minimo"],
+                            proveedor=item_data["proveedor"]
+                        )
+                        items.append(item)
+                    return items if items else None
+            return None
+        except Exception as e:
+            print(f"Error al cargar inventario: {e}")
+            return None
 
 
 @dataclass
@@ -2162,6 +2219,10 @@ class AplicacionRestaurante:
                     receta_total[nombre] = receta_total.get(nombre, 0) + valor * cantidad
 
             self.inventario.decrementar_por_receta(receta_total)
+            
+            # Guardar el inventario actualizado en archivo
+            self.inventario.guardar_inventario()
+            
         except ValueError as e:
             messagebox.showerror("Error de inventario", str(e))
             return
