@@ -4,7 +4,7 @@
             "id": 1,
             "nombre": "Pollo",
             "unidad": "kg",
-            "cantidad": 37.75,
+            "cantidad": 37.4,
             "minimo": 5.0,
             "proveedor": "Proveedor Carnes del Valle"
         },
@@ -12,7 +12,7 @@
             "id": 2,
             "nombre": "Carne",
             "unidad": "kg",
-            "cantidad": 12.0,
+            "cantidad": 11.6,
             "minimo": 4.0,
             "proveedor": "Proveedor Carnes del Valle"
         },
@@ -20,7 +20,7 @@
             "id": 3,
             "nombre": "Camaron",
             "unidad": "kg",
-            "cantidad": 10.0,
+            "cantidad": 9.5,
             "minimo": 3.0,
             "proveedor": "Proveedor Mar Fresco"
         },
@@ -28,7 +28,7 @@
             "id": 4,
             "nombre": "Queso",
             "unidad": "kg",
-            "cantidad": 7.48,
+            "cantidad": 7.200000000000001,
             "minimo": 2.0,
             "proveedor": "Proveedor Lácteos La Granja"
         },
@@ -60,7 +60,7 @@
             "id": 8,
             "nombre": "Chocolate",
             "unidad": "kg",
-            "cantidad": 3.82,
+            "cantidad": 3.6399999999999997,
             "minimo": 1.0,
             "proveedor": "Proveedor Dulces"
         },
@@ -68,7 +68,7 @@
             "id": 9,
             "nombre": "Harina",
             "unidad": "kg",
-            "cantidad": 5.83,
+            "cantidad": 5.5,
             "minimo": 2.0,
             "proveedor": "Proveedor Harinas"
         },
@@ -76,7 +76,7 @@
             "id": 10,
             "nombre": "Leche",
             "unidad": "L",
-            "cantidad": 9.7,
+            "cantidad": 9.399999999999999,
             "minimo": 3.0,
             "proveedor": "Proveedor Lácteos La Granja"
         },
@@ -84,7 +84,7 @@
             "id": 11,
             "nombre": "Azucar",
             "unidad": "kg",
-            "cantidad": 5.81,
+            "cantidad": 5.619999999999999,
             "minimo": 1.5,
             "proveedor": "Proveedor Dulces"
         },
@@ -92,7 +92,7 @@
             "id": 12,
             "nombre": "Frutos Rojos",
             "unidad": "kg",
-            "cantidad": 2.95,
+            "cantidad": 2.9000000000000004,
             "minimo": 0.5,
             "proveedor": "Proveedor Frutas"
         },
@@ -145,5 +145,5 @@
             "proveedor": "Proveedor Lácteos La Granja"
         }
     ],
-    "fecha_guardado": "2026-07-08 08:55:35"
+    "fecha_guardado": "2026-08-03 13:16:45"
 }

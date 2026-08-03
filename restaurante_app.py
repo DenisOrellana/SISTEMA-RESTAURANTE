@@ -24,6 +24,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, asdict
@@ -39,6 +40,46 @@ def obtener_ruta_recurso(nombre_archivo):
     else:
         # Modo script Python directo
         return nombre_archivo
+
+
+def aplicar_logo_ventana(ventana):
+    """Aplica el logo del restaurante a una ventana o diálogo de Tkinter"""
+    try:
+        icono_ico = obtener_ruta_recurso("icono_restaurante.ico")
+        icono_png = obtener_ruta_recurso("icono_restaurante.png")
+
+        if os.path.exists(icono_ico) and hasattr(ventana, "iconbitmap"):
+            ventana.iconbitmap(icono_ico)
+
+        if os.path.exists(icono_png) and hasattr(ventana, "iconphoto"):
+            img = Image.open(icono_png)
+            img_48 = img.resize((48, 48), Image.LANCZOS)
+            foto = ImageTk.PhotoImage(img_48)
+            try:
+                ventana.iconphoto(False, foto)
+            except Exception:
+                pass
+            if hasattr(ventana, "_taskbar_icon"):
+                ventana._taskbar_icon = foto
+            else:
+                ventana._taskbar_icon = foto
+    except Exception as e:
+        print(f"Advertencia: No se pudo cargar el icono en ventana: {e}")
+
+
+def obtener_ruta_persistente(nombre_archivo):
+    """Devuelve una ruta de escritura segura en AppData para datos persistentes del .exe."""
+    appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    base = appdata / "SistemaRestaurante"
+    base.mkdir(parents=True, exist_ok=True)
+
+    destino = base / nombre_archivo
+    if not destino.exists():
+        recurso = Path(obtener_ruta_recurso(nombre_archivo))
+        if recurso.exists():
+            shutil.copy2(recurso, destino)
+
+    return str(destino)
 
 # ==================== CONFIGURACIÓN DE COLORES ====================
 class Colores:
@@ -57,11 +98,15 @@ class Colores:
 
 EXTRAS_DISPONIBLES = [
     ("Aderezo extra", 1.50),
-    ("Más queso", 2.00),
-    ("Refresco", 2.50),
+    ("Queso extra", 2.00),
     ("Salsa extra", 1.00),
     ("Papas extra", 3.50),
-    ("Huevo extra", 1.75),
+    ("Salsa BBQ", 1.75),
+    ("Guarnición de ensalada", 2.50),
+    ("Pan extra", 1.25),
+    ("Bebida extra", 2.99),
+    ("Postre extra", 4.50),
+    ("Helado extra", 3.00),
 ]
 
 
@@ -108,7 +153,7 @@ class InventarioItem:
 class Inventario:
     """Gestiona los ingredientes disponibles y el control de stock"""
     
-    RUTA_INVENTARIO = "inventario_guardado.json"
+    RUTA_INVENTARIO = obtener_ruta_persistente("inventario_guardado.json")
 
     def __init__(self):
         self.items = self._cargar_inicial()
@@ -245,7 +290,8 @@ class BaseDatos:
     """Gestiona la persistencia de datos"""
     
     def __init__(self, ruta_archivo="restaurante_db.txt"):
-        self.ruta = Path(ruta_archivo)
+        self.ruta = Path(obtener_ruta_persistente(ruta_archivo))
+        self.ruta.parent.mkdir(parents=True, exist_ok=True)
         self.ruta.touch(exist_ok=True)  # Crear archivo si no existe
     
     def guardar_orden(self, orden: Orden):
@@ -816,6 +862,7 @@ class VistaPreviaOrden:
         popup.config(bg=Colores.FONDO_PRINCIPAL)
         popup.transient(self.frame.winfo_toplevel())
         popup.grab_set()
+        aplicar_logo_ventana(popup)
 
         popup.update_idletasks()
         x = self.frame.winfo_toplevel().winfo_rootx() + (self.frame.winfo_toplevel().winfo_width() // 2) - 180
@@ -1050,15 +1097,46 @@ class VistaPreviaOrden:
 class ControlMesas:
     """Sección de control de mesas"""
     
-    def __init__(self, parent, on_seleccionar_mesa):
+    def __init__(self, parent, on_seleccionar_mesa, db):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         self.on_seleccionar_mesa = on_seleccionar_mesa
+        self.db = db
+        self.mesas_ocupadas = set()
+        self.boton_mesas = {}
         
         self._crear_interfaz()
+
+    def _cargar_mesas_ocupadas(self):
+        """Obtiene las mesas ya ocupadas desde el historial de órdenes"""
+        self.mesas_ocupadas.clear()
+        for orden in self.db.obtener_ordenes():
+            try:
+                partes = orden.split("|")
+                if len(partes) >= 2:
+                    mesa = int(partes[1])
+                    self.mesas_ocupadas.add(mesa)
+            except Exception:
+                continue
+
+    def _actualizar_visual(self):
+        """Refresca la apariencia visual de las mesas según el estado actual"""
+        self._cargar_mesas_ocupadas()
+        for mesa in range(1, 17):
+            btn = self.boton_mesas.get(mesa)
+            if not btn:
+                continue
+            ocupada = mesa in self.mesas_ocupadas
+            btn.config(
+                text=f"{'★ ' if ocupada else ''}Mesa {mesa}\n{'(Ocupada)' if ocupada else '(Disponible)'}",
+                bg="#FDECEC" if ocupada else Colores.BLANCO,
+                fg="#B91C1C" if ocupada else Colores.TEXTO_OSCURO,
+                state=tk.DISABLED if ocupada else tk.NORMAL
+            )
     
     def _crear_interfaz(self):
         """Crea la interfaz de control de mesas"""
-        # Encabezado
+        self._cargar_mesas_ocupadas()
+
         header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
         header.pack(fill=tk.X)
         
@@ -1072,28 +1150,37 @@ class ControlMesas:
         )
         titulo.pack()
         
-        # Grid de mesas
         contenedor = tk.Frame(self.frame, bg=Colores.FONDO_PRINCIPAL)
         contenedor.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        for mesa in range(1, 17):  # 16 mesas
+        for mesa in range(1, 17):
+            ocupada = mesa in self.mesas_ocupadas
             btn = tk.Button(
                 contenedor,
-                text=f"Mesa {mesa}\n(Disponible)",
-                bg=Colores.BLANCO,
-                fg=Colores.TEXTO_OSCURO,
+                text=f"{'★ ' if ocupada else ''}Mesa {mesa}\n{'(Ocupada)' if ocupada else '(Disponible)'}",
+                bg="#FDECEC" if ocupada else Colores.BLANCO,
+                fg="#B91C1C" if ocupada else Colores.TEXTO_OSCURO,
                 font=("Segoe UI", 11, "bold"),
                 relief=tk.RAISED,
                 bd=1,
                 width=15,
                 height=5,
-                cursor="hand2",
-                command=lambda m=mesa: self._mesa_click(m)
+                cursor="hand2" if not ocupada else "arrow",
+                command=lambda m=mesa: self._mesa_click(m),
+                state=tk.DISABLED if ocupada else tk.NORMAL
             )
             btn.grid(row=(mesa-1)//4, column=(mesa-1)%4, padx=10, pady=10)
+            self.boton_mesas[mesa] = btn
+
+    def actualizar_mesas(self):
+        """Refresca el estado de las mesas después de confirmar una orden"""
+        self._actualizar_visual()
 
     def _mesa_click(self, mesa_num):
         """Maneja el clic en una mesa"""
+        if mesa_num in self.mesas_ocupadas:
+            messagebox.showwarning("Mesa ocupada", f"La mesa {mesa_num} ya está ocupada.")
+            return
         self.on_seleccionar_mesa(mesa_num)
 
 
@@ -1554,6 +1641,7 @@ class DialogoComensales(tk.Toplevel):
         self.config(bg=Colores.FONDO_PRINCIPAL)
         self.transient(parent)
         self.grab_set()
+        aplicar_logo_ventana(self)
         
         self.callback = callback
         self.mesa_num = mesa_num
@@ -1839,6 +1927,9 @@ class PantallaPago:
         self.on_pagar = on_pagar_callback
         
         self.metodo_pago = tk.StringVar(value="Efectivo")
+        self.calificacion = tk.IntVar(value=5)
+        self.queja_text = None
+        self.stars_buttons = []
         
         self._crear_interfaz()
         
@@ -1852,7 +1943,7 @@ class PantallaPago:
             highlightbackground=Colores.BORDE_GRIS,
             highlightthickness=1
         )
-        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=600, height=580)
+        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=640, height=780)
         
         # Encabezado de Pago
         header = tk.Label(
@@ -1878,7 +1969,7 @@ class PantallaPago:
         
         # Contenedor de Detalle de Items
         items_card = tk.Frame(card, bg=Colores.FONDO_PRINCIPAL, bd=1, relief=tk.SOLID)
-        items_card.pack(fill=tk.BOTH, expand=True, padx=40, pady=10)
+        items_card.pack(fill=tk.BOTH, padx=40, pady=10)
         
         # Scroll para items si hay muchos
         canvas = tk.Canvas(items_card, bg=Colores.FONDO_PRINCIPAL, highlightthickness=0)
@@ -1986,6 +2077,59 @@ class PantallaPago:
             cursor="hand2"
         )
         rb_tarjeta.pack(side=tk.LEFT, padx=5)
+
+        # Sección de quejas y valoración
+        quejas_frame = tk.Frame(card, bg=Colores.FONDO_PRINCIPAL, bd=1, relief=tk.SOLID)
+        quejas_frame.pack(fill=tk.X, padx=40, pady=(0, 10))
+
+        tk.Label(
+            quejas_frame,
+            text="📝 Quejas o comentarios",
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 10, "bold")
+        ).pack(anchor=tk.W, padx=10, pady=(10, 4))
+
+        self.queja_text = scrolledtext.ScrolledText(
+            quejas_frame,
+            height=3,
+            wrap=tk.WORD,
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 9)
+        )
+        self.queja_text.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+        tk.Label(
+            quejas_frame,
+            text="⭐ Calificación del servicio",
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO,
+            font=("Segoe UI", 10, "bold")
+        ).pack(anchor=tk.W, padx=10, pady=(0, 4))
+
+        star_frame = tk.Frame(quejas_frame, bg=Colores.FONDO_PRINCIPAL)
+        star_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        def actualizar_estrellas(valor):
+            for i, boton in enumerate(self.stars_buttons):
+                boton.config(fg="#F59E0B" if i < valor else Colores.GRIS_INACTIVO)
+            self.calificacion.set(valor)
+
+        for i in range(1, 6):
+            btn_star = tk.Button(
+                star_frame,
+                text="★",
+                bg=Colores.FONDO_PRINCIPAL,
+                fg="#F59E0B" if i <= self.calificacion.get() else Colores.GRIS_INACTIVO,
+                font=("Segoe UI", 14, "bold"),
+                relief=tk.FLAT,
+                bd=0,
+                cursor="hand2",
+                command=lambda valor=i: actualizar_estrellas(valor)
+            )
+            btn_star.pack(side=tk.LEFT, padx=2)
+            self.stars_buttons.append(btn_star)
         
         # Botones de Acción
         btn_frame = tk.Frame(card, bg=Colores.BLANCO)
@@ -2026,15 +2170,17 @@ class PantallaPago:
         if not nombre_fact:
             messagebox.showerror("Error", "Por favor ingrese el nombre para la facturación")
             return
-            
+
+        queja = self.queja_text.get("1.0", tk.END).strip() if self.queja_text else ""
+        calificacion = self.calificacion.get()
         metodo = self.metodo_pago.get()
-        self.on_pagar(nombre_fact, metodo)
+        self.on_pagar(nombre_fact, metodo, queja, calificacion)
 
 
 class PantallaFactura:
     """Pantalla que simula una factura de restaurante y muestra el ticket final"""
     
-    def __init__(self, parent, id_orden, total, cliente_nombre, cliente_apellido, facturado_a, metodo_pago, mesa, comensales, items_orden, on_inicio_callback):
+    def __init__(self, parent, id_orden, total, cliente_nombre, cliente_apellido, facturado_a, metodo_pago, mesa, comensales, items_orden, queja, calificacion, on_inicio_callback):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         self.id_orden = id_orden
         self.total = total
@@ -2045,6 +2191,8 @@ class PantallaFactura:
         self.mesa = mesa
         self.comensales = comensales
         self.items_orden = items_orden
+        self.queja = queja
+        self.calificacion = calificacion
         self.on_inicio = on_inicio_callback
         
         self._crear_interfaz()
@@ -2130,6 +2278,8 @@ class PantallaFactura:
         lines.append(f"{' TOTAL A PAGAR:':<36}${self.total:>7.2f}")
         lines.append("="*46)
         lines.append(f" Método de Pago: {self.metodo_pago}")
+        lines.append(f" Calificación: {'★' * self.calificacion}{'☆' * (5 - self.calificacion)}")
+        lines.append(f" Queja/Comentario: {self.queja if self.queja else 'Ninguna'}")
         lines.append("\n          ¡GRACIAS POR SU PREFERENCIA!          ")
         lines.append("="*46)
         
@@ -2160,28 +2310,9 @@ class AplicacionRestaurante:
     def __init__(self, root):
         self.root = root
         self.root.title("🍽️ Sistema de Gestión de Restaurante")
-        self.root.geometry("1400x750")
+        self.root.geometry("1400x800")
         self.root.config(bg=Colores.FONDO_PRINCIPAL)
-        
-        # Establecer icono de la ventana y barra de tareas
-        try:
-            icono_ico = obtener_ruta_recurso("icono_restaurante.ico")
-            icono_png = obtener_ruta_recurso("icono_restaurante.png")
-            
-            # iconbitmap para el icono de la barra de título
-            if os.path.exists(icono_ico):
-                self.root.iconbitmap(icono_ico)
-            
-            # iconphoto para el icono de la barra de tareas de Windows
-            if os.path.exists(icono_png):
-                img = Image.open(icono_png)
-                # Crear icono grande (48x48) para la barra de tareas
-                img_48 = img.resize((48, 48), Image.LANCZOS)
-                self._taskbar_icon = ImageTk.PhotoImage(img_48)
-                # Aplicar después de que la ventana esté completamente creada
-                self.root.after(10, lambda: self.root.iconphoto(False, self._taskbar_icon))
-        except Exception as e:
-            print(f"Advertencia: No se pudo cargar el icono: {e}")
+        aplicar_logo_ventana(self.root)
         
         # Base de datos
         self.db = BaseDatos("restaurante_db.txt")
@@ -2225,10 +2356,12 @@ class AplicacionRestaurante:
         ).frame
         
         # Control de Mesas (con callback de selección)
-        self.secciones["mesas"] = ControlMesas(
+        self.mesas_control = ControlMesas(
             self.content_container,
-            on_seleccionar_mesa=self._on_seleccionar_mesa
-        ).frame
+            on_seleccionar_mesa=self._on_seleccionar_mesa,
+            db=self.db
+        )
+        self.secciones["mesas"] = self.mesas_control.frame
         
         # Catálogo de menú (con vista previa de orden)
         frame_catalogo_container = tk.Frame(self.content_container, bg=Colores.FONDO_PRINCIPAL)
@@ -2290,6 +2423,7 @@ class AplicacionRestaurante:
         popup.config(bg=Colores.FONDO_PRINCIPAL)
         popup.transient(self.root)
         popup.grab_set()
+        aplicar_logo_ventana(popup)
         
         popup.update_idletasks()
         x = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 150
@@ -2362,7 +2496,7 @@ class AplicacionRestaurante:
         self.secciones["pago"] = self.pantalla_pago.frame
         self._mostrar_seccion("pago")
         
-    def _procesar_pago(self, facturado_a, metodo_pago):
+    def _procesar_pago(self, facturado_a, metodo_pago, queja="", calificacion=5):
         """Procesa el pago, descuenta stock, guarda la orden en la BD y muestra la factura"""
         items_lista = self.current_order_items
         total = self.current_order_total
@@ -2413,6 +2547,9 @@ class AplicacionRestaurante:
             # Crear y mostrar Factura
             if "factura" in self.secciones:
                 self.secciones["factura"].pack_forget()
+
+            if hasattr(self, "mesas_control"):
+                self.mesas_control.actualizar_mesas()
                 
             self.pantalla_factura = PantallaFactura(
                 self.content_container,
@@ -2425,6 +2562,8 @@ class AplicacionRestaurante:
                 mesa,
                 comensales,
                 self.vista_previa.items_orden,
+                queja,
+                calificacion,
                 on_inicio_callback=self._volver_al_inicio
             )
             self.secciones["factura"] = self.pantalla_factura.frame
