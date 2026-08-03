@@ -23,6 +23,7 @@ except Exception:
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, asdict
@@ -52,6 +53,16 @@ class Colores:
     BORDE_GRIS = "#E5DDE9"           # Gris lila muy tenue para los bordes
     BLANCO = "#FFFFFF"               
     GRIS_INACTIVO = "#D2C9D6"        # Morado grisáceo apagado para botones inactivos
+
+
+EXTRAS_DISPONIBLES = [
+    ("Aderezo extra", 1.50),
+    ("Más queso", 2.00),
+    ("Refresco", 2.50),
+    ("Salsa extra", 1.00),
+    ("Papas extra", 3.50),
+    ("Huevo extra", 1.75),
+]
 
 
 # ==================== CLASES DE DATOS ====================
@@ -797,50 +808,82 @@ class VistaPreviaOrden:
         self.entry_comensales.config(state="readonly")
 
     def _agregar_extra(self):
-        """Abre un diálogo emergente para ingresar un artículo extra"""
+        """Abre un diálogo emergente para escoger un extra con su precio"""
         popup = tk.Toplevel(self.frame)
-        popup.title("Agregar Artículo Extra")
-        popup.geometry("300x200")
+        popup.title("Agregar Extra")
+        popup.geometry("360x250")
         popup.resizable(False, False)
         popup.config(bg=Colores.FONDO_PRINCIPAL)
         popup.transient(self.frame.winfo_toplevel())
         popup.grab_set()
-        
-        # Center popup
+
         popup.update_idletasks()
-        x = self.frame.winfo_toplevel().winfo_rootx() + (self.frame.winfo_toplevel().winfo_width() // 2) - 150
-        y = self.frame.winfo_toplevel().winfo_rooty() + (self.frame.winfo_toplevel().winfo_height() // 2) - 100
+        x = self.frame.winfo_toplevel().winfo_rootx() + (self.frame.winfo_toplevel().winfo_width() // 2) - 180
+        y = self.frame.winfo_toplevel().winfo_rooty() + (self.frame.winfo_toplevel().winfo_height() // 2) - 125
         popup.geometry(f"+{x}+{y}")
-        
-        tk.Label(popup, text="Nombre del Extra:", font=("Segoe UI", 9, "bold"), bg=Colores.FONDO_PRINCIPAL, fg=Colores.TEXTO_OSCURO).pack(pady=(15, 2))
-        entry_nombre = tk.Entry(popup, font=("Segoe UI", 10), width=25)
-        entry_nombre.pack(pady=2)
-        entry_nombre.focus_set()
-        
-        tk.Label(popup, text="Precio ($):", font=("Segoe UI", 9, "bold"), bg=Colores.FONDO_PRINCIPAL, fg=Colores.TEXTO_OSCURO).pack(pady=(10, 2))
-        entry_precio = tk.Entry(popup, font=("Segoe UI", 10), width=10, justify=tk.CENTER)
-        entry_precio.pack(pady=2)
-        entry_precio.insert(0, "0.00")
-        
+
+        tk.Label(
+            popup,
+            text="Seleccione el extra:",
+            font=("Segoe UI", 9, "bold"),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO
+        ).pack(pady=(15, 5))
+
+        opciones = [f"{nombre} - ${precio:.2f}" for nombre, precio in EXTRAS_DISPONIBLES]
+        seleccion = tk.StringVar(value=opciones[0])
+        combo = ttk.Combobox(
+            popup,
+            textvariable=seleccion,
+            values=opciones,
+            state="readonly",
+            width=28,
+            font=("Segoe UI", 10)
+        )
+        combo.pack(pady=2)
+        combo.focus_set()
+
+        precio_label = tk.Label(
+            popup,
+            text="Precio: $0.00",
+            font=("Segoe UI", 9, "bold"),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.ACENTO_NARANJA
+        )
+        precio_label.pack(pady=(12, 2))
+
+        def actualizar_precio(event=None):
+            texto = seleccion.get()
+            for nombre, precio in EXTRAS_DISPONIBLES:
+                if texto.startswith(f"{nombre} - "):
+                    precio_label.config(text=f"Precio: ${precio:.2f}")
+                    break
+
+        combo.bind("<<ComboboxSelected>>", actualizar_precio)
+        actualizar_precio()
+
         def confirmar():
-            nombre = entry_nombre.get().strip()
-            precio_str = entry_precio.get().strip()
-            if not nombre:
-                messagebox.showerror("Error", "Ingrese el nombre del artículo extra", parent=popup)
+            texto = seleccion.get().strip()
+            if not texto:
+                messagebox.showerror("Error", "Seleccione un extra válido", parent=popup)
                 return
-            try:
-                precio = float(precio_str)
-                if precio < 0:
-                    raise ValueError
-            except ValueError:
-                messagebox.showerror("Error", "Ingrese un precio numérico válido mayor o igual a 0", parent=popup)
+
+            nombre_extra = None
+            precio = None
+            for nombre, precio_extra in EXTRAS_DISPONIBLES:
+                if texto.startswith(f"{nombre} - "):
+                    nombre_extra = nombre
+                    precio = precio_extra
+                    break
+
+            if nombre_extra is None or precio is None:
+                messagebox.showerror("Error", "Seleccione un extra válido", parent=popup)
                 return
-                
-            # Generar un ID único para el extra
+
             extra_id = 1000 + len(self.items_orden)
             prod_extra = Producto(
                 id=extra_id,
-                nombre=f"[Extra] {nombre}",
+                nombre=f"[Extra] {nombre_extra}",
                 descripcion="Artículo extra agregado manualmente",
                 precio=precio,
                 categoria="Extra",
@@ -848,12 +891,37 @@ class VistaPreviaOrden:
             )
             self.agregar_producto(prod_extra)
             popup.destroy()
-            
+
         btn_frame = tk.Frame(popup, bg=Colores.FONDO_PRINCIPAL)
         btn_frame.pack(pady=15)
-        
-        tk.Button(btn_frame, text="Agregar", bg=Colores.ACENTO_NARANJA, fg=Colores.BLANCO, font=("Segoe UI", 9, "bold"), relief=tk.FLAT, bd=0, padx=10, pady=5, cursor="hand2", command=confirmar).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Cancelar", bg=Colores.GRIS_INACTIVO, fg=Colores.BLANCO, font=("Segoe UI", 9, "bold"), relief=tk.FLAT, bd=0, padx=10, pady=5, cursor="hand2", command=popup.destroy).pack(side=tk.RIGHT, padx=10)
+
+        tk.Button(
+            btn_frame,
+            text="Agregar",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=confirmar
+        ).pack(side=tk.LEFT, padx=10)
+
+        tk.Button(
+            btn_frame,
+            text="Cancelar",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=popup.destroy
+        ).pack(side=tk.RIGHT, padx=10)
 
     def agregar_producto(self, producto):
         """Agrega un producto a la orden"""
@@ -1594,7 +1662,7 @@ class Portada:
             highlightbackground=Colores.BORDE_GRIS,
             highlightthickness=1
         )
-        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=500, height=520)
+        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=500, height=600)
         
         # Logo o Emoji
         logo_label = tk.Label(card, bg=Colores.BLANCO)
@@ -1651,7 +1719,9 @@ class Portada:
             form_frame,
             font=("Segoe UI", 11),
             bd=1,
-            relief=tk.SOLID
+            relief=tk.SOLID,
+            validate="key",
+            validatecommand=(self.frame.register(self._validar_texto), "%P")
         )
         self.entry_nombre.pack(fill=tk.X, ipady=5, pady=(0, 10))
         
@@ -1669,9 +1739,33 @@ class Portada:
             form_frame,
             font=("Segoe UI", 11),
             bd=1,
-            relief=tk.SOLID
+            relief=tk.SOLID,
+            validate="key",
+            validatecommand=(self.frame.register(self._validar_texto), "%P")
         )
-        self.entry_apellido.pack(fill=tk.X, ipady=5, pady=(0, 20))
+        self.entry_apellido.pack(fill=tk.X, ipady=5, pady=(0, 10))
+
+        lbl_edad = tk.Label(
+            form_frame,
+            text="Ingrese la edad:",
+            font=("Segoe UI", 10, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO,
+            anchor=tk.W
+        )
+        lbl_edad.pack(fill=tk.X, pady=(10, 2))
+
+        self.entry_edad = tk.Entry(
+            form_frame,
+            font=("Segoe UI", 11),
+            bd=1,
+            relief=tk.SOLID,
+            width=8,
+            justify=tk.CENTER,
+            validate="key",
+            validatecommand=(self.frame.register(self._validar_edad), "%P")
+        )
+        self.entry_edad.pack(fill=tk.X, ipady=5, pady=(0, 20))
         
         # Botón Ingresar
         btn_ingresar = tk.Button(
@@ -1699,17 +1793,34 @@ class Portada:
             cursor="hand2",
             command=self._admin_click
         )
-        btn_admin.place(x=400, y=485)
+        btn_admin.place(x=400, y=565)
+
+    def _validar_texto(self, texto):
+        return bool(re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{0,15}", texto))
+
+    def _validar_edad(self, texto):
+        return bool(re.fullmatch(r"\d{0,2}", texto))
         
     def _ingresar(self):
         nombre = self.entry_nombre.get().strip()
         apellido = self.entry_apellido.get().strip()
+        edad = self.entry_edad.get().strip()
         
-        if not nombre or not apellido:
-            messagebox.showerror("Error", "Por favor ingrese su nombre y apellido")
+        if not nombre or not apellido or not edad:
+            messagebox.showerror("Error", "Por favor ingrese su nombre, apellido y edad")
+            return
+
+        try:
+            edad_int = int(edad)
+        except ValueError:
+            messagebox.showerror("Error", "La edad debe ser un número válido")
+            return
+
+        if edad_int <= 18:
+            messagebox.showerror("Error", "Debe ser mayor de 18 años para ingresar al sistema")
             return
             
-        self.on_ingresar(nombre, apellido)
+        self.on_ingresar(nombre, apellido, str(edad_int))
         
     def _admin_click(self):
         self.on_admin()
@@ -2162,10 +2273,11 @@ class AplicacionRestaurante:
             else:
                 frame.pack_forget()
     
-    def _on_ingresar_portada(self, nombre, apellido):
+    def _on_ingresar_portada(self, nombre, apellido, edad):
         """Maneja el ingreso desde la portada y pasa a la selección de mesas"""
         self.cliente_nombre = nombre
         self.cliente_apellido = apellido
+        self.cliente_edad = edad
         self.vista_previa._limpiar_orden()
         self._mostrar_seccion("mesas")
         
