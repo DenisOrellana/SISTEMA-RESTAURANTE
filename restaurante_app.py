@@ -452,9 +452,10 @@ class BarraLateral:
 class TarjetaProducto:
     """Tarjeta visual de un producto"""
     
-    def __init__(self, parent, producto, on_agregar_callback):
+    def __init__(self, parent, producto, on_agregar_callback, on_quitar_callback=None):
         self.producto = producto
         self.on_agregar = on_agregar_callback
+        self.on_quitar = on_quitar_callback
         
         self.frame = tk.Frame(
             parent,
@@ -539,7 +540,21 @@ class TarjetaProducto:
         )
         precio_label.pack(side=tk.LEFT)
         
-        # Botón +
+        # Botones de acción rápidos
+        self.btn_quitar = tk.Button(
+            footer_frame,
+            text="➖",
+            bg="#E11D48",
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 12),
+            relief=tk.FLAT,
+            bd=0,
+            padx=8,
+            pady=2,
+            command=self._quitar_producto
+        )
+        self.btn_quitar.pack(side=tk.RIGHT, padx=(0, 4))
+
         self.btn_agregar = tk.Button(
             footer_frame,
             text="➕",
@@ -554,13 +569,21 @@ class TarjetaProducto:
         )
         self.btn_agregar.pack(side=tk.RIGHT)
         
-        # Eventos hover del botón
+        # Eventos hover de los botones
         self.btn_agregar.bind("<Enter>", self._on_btn_hover_enter)
         self.btn_agregar.bind("<Leave>", self._on_btn_hover_leave)
+        self.btn_quitar.bind("<Enter>", self._on_btn_quitar_hover_enter)
+        self.btn_quitar.bind("<Leave>", self._on_btn_quitar_hover_leave)
     
     def _agregar_producto(self):
         """Agrega el producto a la orden"""
-        self.on_agregar(self.producto)
+        if self.on_agregar:
+            self.on_agregar(self.producto)
+
+    def _quitar_producto(self):
+        """Quita una unidad del producto de la orden"""
+        if self.on_quitar:
+            self.on_quitar(self.producto)
     
     def _on_btn_hover_enter(self, event):
         """Cambio de color al pasar el mouse"""
@@ -569,6 +592,14 @@ class TarjetaProducto:
     def _on_btn_hover_leave(self, event):
         """Vuelve al color normal"""
         self.btn_agregar.config(bg=Colores.ACENTO_NARANJA)
+
+    def _on_btn_quitar_hover_enter(self, event):
+        """Cambio de color al pasar el mouse en el botón de quitar"""
+        self.btn_quitar.config(bg="#BE123C")
+
+    def _on_btn_quitar_hover_leave(self, event):
+        """Vuelve al color normal del botón de quitar"""
+        self.btn_quitar.config(bg="#E11D48")
     
     def pack(self, **kwargs):
         """Empaqueta el frame"""
@@ -578,10 +609,11 @@ class TarjetaProducto:
 class CatalogoMenu:
     """Sección del catálogo de menú"""
     
-    def __init__(self, parent, on_agregar_callback):
+    def __init__(self, parent, on_agregar_callback, on_quitar_callback=None):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         
         self.on_agregar = on_agregar_callback
+        self.on_quitar = on_quitar_callback
         self.tarjetas = {}
         self.catalogo = CatalogoComienzo.obtener_productos()
         
@@ -676,7 +708,7 @@ class CatalogoMenu:
             frame_prod = tk.Frame(contenedor, bg=Colores.FONDO_PRINCIPAL)
             frame_prod.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
             
-            tarjeta = TarjetaProducto(frame_prod, producto, self.on_agregar)
+            tarjeta = TarjetaProducto(frame_prod, producto, self.on_agregar, self.on_quitar)
             tarjeta.pack(fill=tk.BOTH, expand=True)
             self.tarjetas[producto.id] = tarjeta
 
@@ -687,7 +719,7 @@ class CatalogoMenu:
 class VistaPreviaOrden:
     """Panel de vista previa de la orden actual"""
     
-    def __init__(self, parent, on_confirmar_callback):
+    def __init__(self, parent, on_confirmar_callback, on_volver_callback=None, on_cancelar_mesa_callback=None, on_datos_mesa_changed=None):
         self.frame = tk.Frame(
             parent,
             bg=Colores.BLANCO,
@@ -699,6 +731,9 @@ class VistaPreviaOrden:
         # NO empaquetar aquí - se hará en _crear_secciones
         
         self.on_confirmar = on_confirmar_callback
+        self.on_volver = on_volver_callback
+        self.on_cancelar_mesa = on_cancelar_mesa_callback
+        self.on_datos_mesa_changed = on_datos_mesa_changed
         self.items_orden = {}  # {id_producto: {"producto": Producto, "cantidad": int}}
         self.total = 0.0
         
@@ -784,14 +819,27 @@ class VistaPreviaOrden:
         tk.Label(formulario_frame, text="Mesa:", bg=Colores.BLANCO, fg=Colores.TEXTO_OSCURO, font=("Segoe UI", 9)).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.entry_mesa = tk.Entry(formulario_frame, font=("Segoe UI", 9), width=10)
         self.entry_mesa.grid(row=0, column=1, sticky=tk.EW, padx=5)
-        self.entry_mesa.config(state="readonly")
         
         tk.Label(formulario_frame, text="Comensales:", bg=Colores.BLANCO, fg=Colores.TEXTO_OSCURO, font=("Segoe UI", 9)).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.entry_comensales = tk.Entry(formulario_frame, font=("Segoe UI", 9), width=10)
         self.entry_comensales.grid(row=1, column=1, sticky=tk.EW, padx=5)
-        self.entry_comensales.config(state="readonly")
         
         formulario_frame.columnconfigure(1, weight=1)
+
+        self.btn_aplicar_datos = tk.Button(
+            self.frame,
+            text="Aplicar datos",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            command=self._aplicar_datos_mesa
+        )
+        self.btn_aplicar_datos.pack(fill=tk.X, padx=10, pady=(0, 8))
         
         # Botón Agregar Extra
         self.btn_extra = tk.Button(
@@ -809,7 +857,36 @@ class VistaPreviaOrden:
         )
         self.btn_extra.pack(fill=tk.X, padx=10, pady=(5, 5))
         
-        # Botón confirmar
+        self.btn_regresar = tk.Button(
+            self.frame,
+            text="🔄 Cambiar Mesa / Comensales",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=self._regresar
+        )
+        self.btn_regresar.pack(fill=tk.X, padx=10, pady=(0, 6))
+
+        self.btn_cancelar_mesa = tk.Button(
+            self.frame,
+            text="🛑 Cancelar Mesa",
+            bg="#C2410C",
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=self._cancelar_mesa
+        )
+        self.btn_cancelar_mesa.pack(fill=tk.X, padx=10, pady=(0, 6))
+
         self.btn_confirmar = tk.Button(
             self.frame,
             text="✓ Confirmar Orden",
@@ -826,7 +903,6 @@ class VistaPreviaOrden:
         )
         self.btn_confirmar.pack(fill=tk.X, padx=10, pady=(0, 10))
         
-        # Botón limpiar
         self.btn_limpiar = tk.Button(
             self.frame,
             text="🗑️ Limpiar",
@@ -843,15 +919,28 @@ class VistaPreviaOrden:
         self.btn_limpiar.pack(fill=tk.X, padx=10, pady=(0, 10))
     
     def establecer_mesa_comensales(self, mesa, comensales):
-        """Establece los valores de mesa y comensales en modo lectura"""
-        self.entry_mesa.config(state=tk.NORMAL)
-        self.entry_comensales.config(state=tk.NORMAL)
+        """Establece los valores de mesa y comensales para edición"""
         self.entry_mesa.delete(0, tk.END)
         self.entry_comensales.delete(0, tk.END)
         self.entry_mesa.insert(0, str(mesa))
         self.entry_comensales.insert(0, str(comensales))
-        self.entry_mesa.config(state="readonly")
-        self.entry_comensales.config(state="readonly")
+
+    def _aplicar_datos_mesa(self):
+        """Aplica la mesa y comensales ingresados y los sincroniza con el flujo principal"""
+        try:
+            mesa = int(self.entry_mesa.get().strip())
+            comensales = int(self.entry_comensales.get().strip())
+            if mesa < 1 or mesa > 20:
+                raise ValueError()
+            if comensales < 1 or comensales > 20:
+                raise ValueError()
+        except ValueError:
+            messagebox.showerror("Error", "Ingrese una mesa y un número de comensales válidos")
+            return
+
+        if self.on_datos_mesa_changed:
+            self.on_datos_mesa_changed(mesa, comensales)
+        messagebox.showinfo("Información", f"Mesa {mesa} y {comensales} comensales aplicados")
 
     def _agregar_extra(self):
         """Abre un diálogo emergente para escoger un extra con su precio"""
@@ -972,16 +1061,22 @@ class VistaPreviaOrden:
 
     def agregar_producto(self, producto):
         """Agrega un producto a la orden"""
-        # Eliminar etiqueta de vacío
         if self.label_vacio.winfo_exists():
             self.label_vacio.pack_forget()
         
-        # Usar ID como clave, guardar producto y cantidad
         if producto.id in self.items_orden:
             self.items_orden[producto.id]["cantidad"] += 1
         else:
             self.items_orden[producto.id] = {"producto": producto, "cantidad": 1}
         
+        self._actualizar_vista()
+
+    def quitar_producto(self, producto):
+        """Quita una unidad del producto de la orden"""
+        if producto.id in self.items_orden:
+            self.items_orden[producto.id]["cantidad"] -= 1
+            if self.items_orden[producto.id]["cantidad"] <= 0:
+                del self.items_orden[producto.id]
         self._actualizar_vista()
     
     def _actualizar_vista(self):
@@ -1026,19 +1121,34 @@ class VistaPreviaOrden:
             )
             subtotal_label.pack(fill=tk.X)
             
-            # Botón eliminar
-            btn_eliminar = tk.Button(
-                item_frame,
-                text="✕",
-                bg=Colores.BLANCO,
-                fg=Colores.ACENTO_NARANJA,
-                font=("Segoe UI", 8),
+            acciones_frame = tk.Frame(item_frame, bg=Colores.FONDO_PRINCIPAL)
+            acciones_frame.pack(fill=tk.X, pady=(5, 0))
+
+            btn_agregar_item = tk.Button(
+                acciones_frame,
+                text="➕",
+                bg=Colores.ACENTO_NARANJA,
+                fg=Colores.BLANCO,
+                font=("Segoe UI", 8, "bold"),
                 relief=tk.FLAT,
                 bd=0,
-                padx=5,
+                padx=6,
+                command=lambda p_id=id_producto: self.agregar_producto(self.items_orden[p_id]["producto"])
+            )
+            btn_agregar_item.pack(side=tk.LEFT, padx=(0, 5))
+
+            btn_eliminar = tk.Button(
+                acciones_frame,
+                text="➖",
+                bg="#E11D48",
+                fg=Colores.BLANCO,
+                font=("Segoe UI", 8, "bold"),
+                relief=tk.FLAT,
+                bd=0,
+                padx=6,
                 command=lambda p_id=id_producto: self._eliminar_producto(p_id)
             )
-            btn_eliminar.pack(pady=(5, 0))
+            btn_eliminar.pack(side=tk.LEFT)
         
         # Actualizar total
         self.label_total.config(text=f"${self.total:.2f}")
@@ -1082,15 +1192,28 @@ class VistaPreviaOrden:
         
         self.on_confirmar(mesa, comensales, items_lista, self.total)
     
+    def _regresar(self):
+        """Regresa a la selección de mesas"""
+        self._limpiar_orden()
+        if self.on_volver:
+            self.on_volver()
+
+    def _cancelar_mesa(self):
+        """Cancela la mesa actual y vuelve al inicio del flujo"""
+        respuesta = messagebox.askyesno(
+            "Cancelar mesa",
+            "¿Desea cancelar esta mesa y volver a la selección de mesas?"
+        )
+        if respuesta:
+            self._limpiar_orden()
+            if self.on_cancelar_mesa:
+                self.on_cancelar_mesa()
+
     def _limpiar_orden(self):
         """Limpia la orden actual"""
         self.items_orden = {}  # Reinicializar diccionario
-        self.entry_mesa.config(state=tk.NORMAL)
-        self.entry_comensales.config(state=tk.NORMAL)
         self.entry_mesa.delete(0, tk.END)
         self.entry_comensales.delete(0, tk.END)
-        self.entry_mesa.config(state="readonly")
-        self.entry_comensales.config(state="readonly")
         self._actualizar_vista()
 
 
@@ -1677,6 +1800,7 @@ class DialogoComensales(tk.Toplevel):
         self.entry_comensales.insert(0, "2")  # Por defecto 2 comensales
         self.entry_comensales.focus_set()
         self.entry_comensales.selection_range(0, tk.END)
+        self.after(100, lambda: self.entry_comensales.focus_force())
         
         # Vincular la tecla Enter
         self.bind("<Return>", lambda e: self._confirmar())
@@ -2365,8 +2489,14 @@ class AplicacionRestaurante:
         
         # Catálogo de menú (con vista previa de orden)
         frame_catalogo_container = tk.Frame(self.content_container, bg=Colores.FONDO_PRINCIPAL)
-        self.catalogo = CatalogoMenu(frame_catalogo_container, self._agregar_a_orden)
-        self.vista_previa = VistaPreviaOrden(frame_catalogo_container, self._confirmar_orden_flow)
+        self.catalogo = CatalogoMenu(frame_catalogo_container, self._agregar_a_orden, self._quitar_de_orden)
+        self.vista_previa = VistaPreviaOrden(
+            frame_catalogo_container,
+            self._confirmar_orden_flow,
+            on_volver_callback=self._volver_a_mesas,
+            on_cancelar_mesa_callback=self._cancelar_mesa_actual,
+            on_datos_mesa_changed=self._actualizar_datos_mesa
+        )
         
         self.catalogo.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.vista_previa.frame.pack(side=tk.RIGHT, fill=tk.BOTH, padx=10, pady=10)
@@ -2475,7 +2605,28 @@ class AplicacionRestaurante:
     def _agregar_a_orden(self, producto):
         """Agrega un producto a la vista previa de orden"""
         self.vista_previa.agregar_producto(producto)
-        
+
+    def _quitar_de_orden(self, producto):
+        """Quita un producto de la vista previa de orden"""
+        self.vista_previa.quitar_producto(producto)
+
+    def _actualizar_datos_mesa(self, mesa, comensales):
+        """Sincroniza la mesa y comensales seleccionados con el flujo principal"""
+        self.mesa_seleccionada = mesa
+        self.comensales_seleccionados = comensales
+
+    def _volver_a_mesas(self):
+        """Regresa a la selección de mesas"""
+        self.mesa_seleccionada = None
+        self.comensales_seleccionados = 0
+        self._mostrar_seccion("mesas")
+
+    def _cancelar_mesa_actual(self):
+        """Cancela la mesa activa y vuelve a la selección"""
+        self.mesa_seleccionada = None
+        self.comensales_seleccionados = 0
+        self._mostrar_seccion("mesas")
+    
     def _confirmar_orden_flow(self, mesa, comensales, items, total):
         """Abre la pantalla de pago y facturación"""
         self.current_order_items = items
