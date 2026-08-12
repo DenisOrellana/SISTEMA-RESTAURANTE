@@ -75,6 +75,7 @@ def construir_exe(ico_path: str) -> bool:
         f"--name={NOMBRE_APP}",
         f"--icon={ico_path}",
         f"--distpath={CARPETA_SALIDA}",
+        "--hidden-import=tkintermapview",
         "--add-data=restaurante_db.txt;.",
         "--add-data=imagenes;imagenes",
         "--add-data=icono_restaurante.svg;.",

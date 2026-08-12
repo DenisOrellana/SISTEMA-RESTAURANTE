@@ -50,12 +50,23 @@ Sistema completo de gestión de restaurante con interfaz gráfica moderna desarr
 - Opciones de exportación y reinicio
 - Diálogo "Acerca De"
 
+#### 7. **Mapa de Ubicaciones (Google Maps)**
+- Mapa interactivo de Google Maps en la pantalla principal
+- 3 ubicaciones seleccionables: **Mi Casa**, **Casa de mi Compañera** y **Universidad**
+- El mapa centra la vista y coloca un pin en la ubicación elegida
+- Aviso automático cuando no hay conexión a internet, con botón de reintento
+
 ## 📦 Requisitos
 
 ```bash
-# Solo se requiere Python 3.6+ (Tkinter incluido)
+# Se requiere Python 3.6+ (Tkinter incluido)
 python --version  # Verificar versión
+
+# Dependencia para el mapa de Google Maps (opcional, pero recomendada):
+pip install tkintermapview
 ```
+
+> Si `tkintermapview` no está instalada, el sistema funciona igual; solo no se muestra el mapa.
 
 Tkinter generalmente viene preinstalado con Python. Si no está disponible:
 

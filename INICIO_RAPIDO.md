@@ -8,7 +8,13 @@ python --version
 # Deberá mostrar Python 3.6 o superior
 ```
 
-### Paso 2: Ejecutar la Aplicación
+### Paso 2: Instalar la dependencia del mapa (opcional)
+```bash
+pip install tkintermapview
+```
+> Si no se instala, el sistema funciona igual; solo no se mostrará el mapa en la pantalla de inicio.
+
+### Paso 3: Ejecutar la Aplicación
 ```bash
 # En Windows
 python restaurante_app.py
@@ -19,7 +25,7 @@ python3 restaurante_app.py
 
 ## 📱 Interfaz Principal
 
-La ventana se divide en 4 partes:
+La pantalla de inicio muestra el **Login** a la izquierda y el **Mapa de Google Maps** a la derecha:
 
 ```
 ┌─────────────────────────────────────────────────────────┐

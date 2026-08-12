@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('restaurante_db.txt', '.'), ('imagenes', 'imagenes'), ('icono_restaurante.svg', '.'), ('icono_restaurante.ico', '.'), ('icono_restaurante.png', '.')],
-    hiddenimports=[],
+    hiddenimports=['tkintermapview'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\DELL\\Documents\\SISTEMA-RESTAURANTE\\icono_restaurante.ico'],
+    icon=['C:\\Users\\denis\\Documents\\II PAC 2026\\SISTEMA RESTAURANTE\\icono_restaurante.ico'],
 )

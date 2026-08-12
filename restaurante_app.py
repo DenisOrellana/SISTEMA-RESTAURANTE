@@ -25,10 +25,20 @@ from tkinter import ttk, messagebox, scrolledtext
 import json
 import re
 import shutil
+import threading
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, asdict
 from PIL import Image, ImageTk
+
+# Mapa interactivo de Google Maps dentro de Tkinter (opcional)
+# Si la librería no está instalada, el sistema sigue funcionando sin el mapa.
+try:
+    from tkintermapview import TkinterMapView
+    TKMAP_DISPONIBLE = True
+except Exception:
+    TkinterMapView = None
+    TKMAP_DISPONIBLE = False
 
 
 # Función helper para encontrar archivos en modo script o exe
@@ -107,6 +117,39 @@ EXTRAS_DISPONIBLES = [
     ("Bebida extra", 2.99),
     ("Postre extra", 4.50),
     ("Helado extra", 3.00),
+]
+
+
+# ==================== MAPA DE GOOGLE MAPS ====================
+# Servidor de imágenes (tiles) de Google Maps que usa el widget del mapa
+SERVIDOR_TILES_GOOGLE = "https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}"
+
+# Las 3 ubicaciones que se pueden seleccionar en la pantalla principal
+UBICACIONES = [
+    {
+        "id": "casa",
+        "nombre": "Sucursal 1",
+        "descripcion": "Villa de San Antonio",
+        "icono": "🏠",
+        "lat": 14.3236228,
+        "lon": -87.6148265,
+    },
+    {
+        "id": "companera",
+        "nombre": "Sucursal 2",
+        "descripcion": "Palo Pintado, Comayagua",
+        "icono": "🏡",
+        "lat": 14.5119761,
+        "lon": -87.6889292,
+    },
+    {
+        "id": "universidad",
+        "nombre": "Sucursal 3",
+        "descripcion": "Univ. José Cecilio del Valle",
+        "icono": "🎓",
+        "lat": 14.4504684,
+        "lon": -87.629898,
+    },
 ]
 
 
@@ -1854,6 +1897,273 @@ class DialogoComensales(tk.Toplevel):
             )
 
 
+class PanelMapa:
+    """Panel con mapa de Google Maps interactivo y selector de 3 ubicaciones"""
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.ubicacion_actual = None
+        self.conectado = None
+        self.botones_ubicacion = {}
+        self.map_widget = None
+        self._crear_interfaz()
+        if UBICACIONES:
+            self._seleccionar_ubicacion(UBICACIONES[0]["id"])
+        self._verificar_conexion()
+
+    def _crear_interfaz(self):
+        self.frame = tk.Frame(self.parent, bg=Colores.FONDO_PRINCIPAL)
+
+        # Tarjeta contenedora del mapa
+        card = tk.Frame(
+            self.frame,
+            bg=Colores.BLANCO,
+            relief=tk.FLAT,
+            bd=0,
+            highlightbackground=Colores.BORDE_GRIS,
+            highlightthickness=1
+        )
+        card.pack(fill=tk.BOTH, expand=True)
+
+        # ── Encabezado ──
+        header = tk.Frame(card, bg=Colores.ACENTO_NARANJA)
+        header.pack(fill=tk.X)
+        tk.Label(
+            header,
+            text="📍 NUESTRAS UBICACIONES",
+            font=("Segoe UI", 13, "bold"),
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO
+        ).pack(pady=(12, 2))
+        tk.Label(
+            header,
+            text="Selecciona una ubicación para verla en el mapa",
+            font=("Segoe UI", 9),
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO
+        ).pack(pady=(0, 10))
+
+        # ── Selector de ubicaciones ──
+        selector = tk.Frame(card, bg=Colores.BLANCO)
+        selector.pack(fill=tk.X, padx=15, pady=12)
+
+        for i, ub in enumerate(UBICACIONES):
+            selector.grid_columnconfigure(i, weight=1, uniform="ubicaciones")
+            btn = tk.Button(
+                selector,
+                text=f"{ub['icono']}  {ub['nombre']}\n{ub['descripcion']}",
+                font=("Segoe UI", 9, "bold"),
+                relief=tk.FLAT,
+                bd=0,
+                cursor="hand2",
+                padx=8,
+                pady=8,
+                command=lambda id_=ub["id"]: self._seleccionar_ubicacion(id_)
+            )
+            btn.grid(row=0, column=i, sticky="ew", padx=6)
+            btn.bind("<Enter>", lambda e, b=btn, id_=ub["id"]: self._hover_btn(b, id_, True))
+            btn.bind("<Leave>", lambda e, b=btn, id_=ub["id"]: self._hover_btn(b, id_, False))
+            self.botones_ubicacion[ub["id"]] = btn
+
+        # ── Área del mapa ──
+        self.area_mapa = tk.Frame(card, bg=Colores.BLANCO)
+        self.area_mapa.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        self.area_mapa.grid_rowconfigure(0, weight=1)
+        self.area_mapa.grid_columnconfigure(0, weight=1)
+
+        if TKMAP_DISPONIBLE:
+            try:
+                self.map_widget = TkinterMapView(
+                    self.area_mapa,
+                    width=700,
+                    height=480,
+                    corner_radius=0,
+                    database_path=obtener_ruta_persistente("map_tiles.db"),
+                    max_zoom=22,
+                )
+                self.map_widget.grid(row=0, column=0, sticky="nsew")
+                self.map_widget.set_tile_server(SERVIDOR_TILES_GOOGLE, max_zoom=22)
+            except Exception as e:
+                print(f"Advertencia: No se pudo crear el mapa: {e}")
+                self.map_widget = None
+
+        # Mensaje de respaldo si la librería del mapa no está instalada
+        self.msg_sin_mapa = tk.Frame(self.area_mapa, bg=Colores.FONDO_PRINCIPAL)
+        tk.Label(
+            self.msg_sin_mapa,
+            text="🗺️ Mapa no disponible",
+            font=("Segoe UI", 12, "bold"),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO
+        ).pack(pady=(40, 5))
+        tk.Label(
+            self.msg_sin_mapa,
+            text="Instala la librería ejecutando:\n  pip install tkintermapview",
+            font=("Segoe UI", 9),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.GRIS_INACTIVO
+        ).pack()
+        if self.map_widget is None:
+            self.msg_sin_mapa.grid(row=0, column=0, sticky="nsew")
+        else:
+            self.msg_sin_mapa.grid_forget()
+
+        # Overlay "sin conexión" que se muestra sobre el mapa
+        self.overlay_offline = tk.Frame(
+            self.area_mapa,
+            bg=Colores.BLANCO,
+            highlightbackground=Colores.BORDE_GRIS,
+            highlightthickness=1
+        )
+        self.overlay_offline.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        tk.Label(
+            self.overlay_offline,
+            text="📡 Sin conexión a Internet",
+            font=("Segoe UI", 12, "bold"),
+            bg=Colores.BLANCO,
+            fg=Colores.TEXTO_OSCURO
+        ).pack(padx=35, pady=(20, 5))
+        tk.Label(
+            self.overlay_offline,
+            text="Conéctate a internet y presiona Reintentar\npara cargar el mapa.",
+            font=("Segoe UI", 9),
+            bg=Colores.BLANCO,
+            fg=Colores.GRIS_INACTIVO,
+            justify=tk.CENTER
+        ).pack(padx=35, pady=(0, 12))
+        tk.Button(
+            self.overlay_offline,
+            text="🔄 Reintentar",
+            bg=Colores.ACENTO_NARANJA,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=18,
+            pady=5,
+            cursor="hand2",
+            command=self._reintentar_conexion
+        ).pack(pady=(0, 20))
+        self.overlay_offline.place_forget()
+
+        # ── Barra de estado inferior ──
+        estado = tk.Frame(card, bg=Colores.FONDO_PRINCIPAL)
+        estado.pack(fill=tk.X)
+        self.label_estado = tk.Label(
+            estado,
+            text="🟡 Verificando conexión...",
+            font=("Segoe UI", 9),
+            bg=Colores.FONDO_PRINCIPAL,
+            fg=Colores.TEXTO_OSCURO,
+            anchor=tk.W
+        )
+        self.label_estado.pack(side=tk.LEFT, padx=15, pady=6)
+
+    def _hover_btn(self, btn, ubicacion_id, entrar):
+        """Efecto hover en los botones de ubicación (respetando el seleccionado)"""
+        if self.ubicacion_actual and ubicacion_id == self.ubicacion_actual["id"]:
+            return
+        if entrar:
+            btn.config(bg=Colores.NARANJA_CLARO, fg=Colores.TEXTO_OSCURO)
+        else:
+            btn.config(bg=Colores.BLANCO, fg=Colores.TEXTO_OSCURO)
+
+    def _seleccionar_ubicacion(self, ubicacion_id):
+        """Centra el mapa en la ubicación elegida y coloca un pin"""
+        for ub in UBICACIONES:
+            if ub["id"] == ubicacion_id:
+                self.ubicacion_actual = ub
+                break
+
+        self._actualizar_botones()
+
+        if self.map_widget is None:
+            return
+
+        try:
+            ub = self.ubicacion_actual
+            self.map_widget.set_zoom(15)
+            self.map_widget.set_position(ub["lat"], ub["lon"])
+            self.map_widget.delete_all_marker()
+            self.map_widget.set_marker(
+                ub["lat"], ub["lon"],
+                text=f"{ub['icono']}  {ub['nombre']}\n{ub['descripcion']}",
+                text_color=Colores.TEXTO_OSCURO,
+                marker_color_circle=Colores.ACENTO_NARANJA,
+                marker_color_outside=Colores.NARANJA_OSCURO,
+            )
+        except Exception as e:
+            print(f"Advertencia: No se pudo mover el mapa: {e}")
+
+    def _actualizar_botones(self):
+        """Resalta el botón de la ubicación actualmente seleccionada"""
+        for ub in UBICACIONES:
+            btn = self.botones_ubicacion[ub["id"]]
+            activo = ub["id"] == self.ubicacion_actual["id"]
+            if activo:
+                btn.config(
+                    bg=Colores.ACENTO_NARANJA,
+                    fg=Colores.BLANCO,
+                    highlightbackground=Colores.ACENTO_NARANJA
+                )
+            else:
+                btn.config(
+                    bg=Colores.BLANCO,
+                    fg=Colores.TEXTO_OSCURO,
+                    highlightbackground=Colores.BORDE_GRIS
+                )
+
+    def _verificar_conexion(self):
+        """Comprueba la conexión a internet en segundo plano"""
+        def revisar():
+            ok = False
+            try:
+                import urllib.request
+                urllib.request.urlopen("https://www.google.com/generate_204", timeout=5)
+                ok = True
+            except Exception:
+                ok = False
+            try:
+                self.frame.after(0, lambda: self._aplicar_conexion(ok))
+            except Exception:
+                pass
+
+        threading.Thread(target=revisar, daemon=True).start()
+
+    def _aplicar_conexion(self, ok):
+        """Actualiza la interfaz según haya o no conexión a internet"""
+        self.conectado = ok
+
+        if self.map_widget is None:
+            self.label_estado.config(text="⚠️ Mapa no disponible (falta librería tkintermapview)")
+            return
+
+        if ok:
+            self.label_estado.config(text="🟢 Conectado — mapa en línea")
+            self.overlay_offline.place_forget()
+            try:
+                # Limpiar caché para que las imágenes descarguen de nuevo
+                self.map_widget.tile_image_cache = {}
+                ub = self.ubicacion_actual
+                self.map_widget.set_position(ub["lat"], ub["lon"])
+            except Exception as e:
+                print(f"Advertencia: No se pudo refrescar el mapa: {e}")
+        else:
+            self.label_estado.config(text="🔴 Sin conexión a Internet — revisa tu red")
+            self.overlay_offline.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+    def _reintentar_conexion(self):
+        """Vuelve a comprobar la conexión a internet"""
+        self.overlay_offline.place_forget()
+        self.label_estado.config(text="🟡 Verificando conexión...")
+        if self.map_widget is not None:
+            try:
+                self.map_widget.tile_image_cache = {}
+            except Exception:
+                pass
+        self._verificar_conexion()
+
+
 class Portada:
     """Pantalla de inicio / portada del restaurante"""
     
@@ -1865,20 +2175,28 @@ class Portada:
         self._crear_interfaz()
         
     def _crear_interfaz(self):
-        # Tarjeta contenedor centrada
+        # Contenedor general con dos paneles: login (izquierda) y mapa (derecha)
+        contenedor = tk.Frame(self.frame, bg=Colores.FONDO_PRINCIPAL)
+        contenedor.pack(fill=tk.BOTH, expand=True, padx=25, pady=20)
+
+        contenedor.grid_rowconfigure(0, weight=1)
+        contenedor.grid_columnconfigure(0, minsize=470)
+        contenedor.grid_columnconfigure(1, weight=1)
+
+        # ── Panel de Login (izquierda) ──
         card = tk.Frame(
-            self.frame,
+            contenedor,
             bg=Colores.BLANCO,
             relief=tk.FLAT,
             bd=0,
             highlightbackground=Colores.BORDE_GRIS,
             highlightthickness=1
         )
-        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=500, height=600)
+        card.grid(row=0, column=0, sticky="ns", padx=(0, 20))
         
         # Logo o Emoji
         logo_label = tk.Label(card, bg=Colores.BLANCO)
-        logo_label.pack(pady=(40, 10))
+        logo_label.pack(pady=(35, 5))
         
         # Intentar cargar icono_restaurante.png si existe
         self.img_ref = None
@@ -1911,11 +2229,11 @@ class Portada:
             bg=Colores.BLANCO,
             fg=Colores.GRIS_INACTIVO
         )
-        subtitulo.pack(pady=(0, 20))
+        subtitulo.pack(pady=(0, 15))
         
         # Formulario
         form_frame = tk.Frame(card, bg=Colores.BLANCO)
-        form_frame.pack(fill=tk.X, padx=50)
+        form_frame.pack(fill=tk.X, padx=45)
         
         lbl_nombre = tk.Label(
             form_frame,
@@ -1977,7 +2295,7 @@ class Portada:
             validate="key",
             validatecommand=(self.frame.register(self._validar_edad), "%P")
         )
-        self.entry_edad.pack(fill=tk.X, ipady=5, pady=(0, 20))
+        self.entry_edad.pack(fill=tk.X, ipady=5, pady=(0, 15))
         
         # Botón Ingresar
         btn_ingresar = tk.Button(
@@ -1991,9 +2309,13 @@ class Portada:
             cursor="hand2",
             command=self._ingresar
         )
-        btn_ingresar.pack(fill=tk.X, padx=50, ipady=8, pady=10)
+        btn_ingresar.pack(fill=tk.X, padx=45, ipady=8, pady=(5, 0))
         
-        # Botón Admin (discreto en la parte inferior derecha)
+        # Espaciador flexible para empujar el acceso admin al fondo de la tarjeta
+        espaciador = tk.Frame(card, bg=Colores.BLANCO)
+        espaciador.pack(fill=tk.BOTH, expand=True)
+        
+        # Botón Admin (discreto en la parte inferior)
         btn_admin = tk.Button(
             card,
             text="🔑 Acceso Admin",
@@ -2005,7 +2327,11 @@ class Portada:
             cursor="hand2",
             command=self._admin_click
         )
-        btn_admin.place(x=400, y=565)
+        btn_admin.pack(pady=(0, 10))
+
+        # ── Panel de Mapa de Google (derecha) ──
+        self.panel_mapa = PanelMapa(contenedor)
+        self.panel_mapa.frame.grid(row=0, column=1, sticky="nsew")
 
     def _validar_texto(self, texto):
         return bool(re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{0,15}", texto))
