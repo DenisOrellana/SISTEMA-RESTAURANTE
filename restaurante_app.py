@@ -411,6 +411,7 @@ class BarraLateral:
         self.on_select = on_select_callback
         self.botones = {}
         self.botones_activos = {}
+        self.logo_sidebar = None
         
         self._crear_botones()
     
@@ -429,13 +430,29 @@ class BarraLateral:
         # Logo/título
         titulo = tk.Label(
             self.frame,
-            text="🍽️ RESTAURANTE",
+            text="RESTAURANTE",
             bg=Colores.BLANCO,
             fg=Colores.ACENTO_NARANJA,
             font=("Segoe UI", 11, "bold"),
-            pady=20
+            pady=20,
+            compound=tk.LEFT,
+            justify=tk.LEFT,
+            anchor=tk.W
         )
         titulo.pack(fill=tk.X, padx=10)
+
+        icono_png = obtener_ruta_recurso("icono_restaurante.png")
+        if os.path.exists(icono_png):
+            try:
+                img = Image.open(icono_png).convert("RGBA")
+                img = img.resize((28, 28), Image.Resampling.LANCZOS)
+                self.logo_sidebar = ImageTk.PhotoImage(img)
+                titulo.config(image=self.logo_sidebar)
+            except Exception as e:
+                print(f"Error cargando logo en barra lateral: {e}")
+                titulo.config(text="🍽️ RESTAURANTE")
+        else:
+            titulo.config(text="🍽️ RESTAURANTE")
         
         # Separador
         sep = tk.Frame(self.frame, bg=Colores.BORDE_GRIS, height=1)
