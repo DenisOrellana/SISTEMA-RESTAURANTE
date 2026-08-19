@@ -652,11 +652,12 @@ class TarjetaProducto:
 class CatalogoMenu:
     """Sección del catálogo de menú"""
     
-    def __init__(self, parent, on_agregar_callback, on_quitar_callback=None):
+    def __init__(self, parent, on_agregar_callback, on_quitar_callback=None, on_volver_callback=None):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         
         self.on_agregar = on_agregar_callback
         self.on_quitar = on_quitar_callback
+        self.on_volver = on_volver_callback
         self.tarjetas = {}
         self.catalogo = CatalogoComienzo.obtener_productos()
         
@@ -671,6 +672,21 @@ class CatalogoMenu:
         # Encabezado
         header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
         header.pack(fill=tk.X)
+        
+        btn_volver = tk.Button(
+            header,
+            text="⬅ Volver a Mesas",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._volver
+        )
+        btn_volver.pack(side=tk.LEFT, padx=10, pady=5)
         
         titulo = tk.Label(
             header,
@@ -754,6 +770,11 @@ class CatalogoMenu:
             tarjeta = TarjetaProducto(frame_prod, producto, self.on_agregar, self.on_quitar)
             tarjeta.pack(fill=tk.BOTH, expand=True)
             self.tarjetas[producto.id] = tarjeta
+
+    def _volver(self):
+        """Regresa a la selección de mesas"""
+        if self.on_volver:
+            self.on_volver()
 
 
 
@@ -1263,9 +1284,10 @@ class VistaPreviaOrden:
 class ControlMesas:
     """Sección de control de mesas"""
     
-    def __init__(self, parent, on_seleccionar_mesa, db):
+    def __init__(self, parent, on_seleccionar_mesa, db, on_volver_callback=None):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         self.on_seleccionar_mesa = on_seleccionar_mesa
+        self.on_volver = on_volver_callback
         self.db = db
         self.mesas_ocupadas = set()
         self.boton_mesas = {}
@@ -1306,6 +1328,21 @@ class ControlMesas:
         header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
         header.pack(fill=tk.X)
         
+        btn_volver = tk.Button(
+            header,
+            text="⬅ Volver",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._volver
+        )
+        btn_volver.pack(side=tk.LEFT, padx=10, pady=5)
+
         titulo = tk.Label(
             header,
             text="🪑 Control de Mesas",
@@ -1349,13 +1386,19 @@ class ControlMesas:
             return
         self.on_seleccionar_mesa(mesa_num)
 
+    def _volver(self):
+        """Regresa a la portada"""
+        if self.on_volver:
+            self.on_volver()
+
 
 class ConfirmacionOrden:
     """Sección de confirmación de órdenes"""
     
-    def __init__(self, parent, db):
+    def __init__(self, parent, db, on_volver_callback=None):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         self.db = db
+        self.on_volver = on_volver_callback
         
         self._crear_interfaz()
     
@@ -1364,6 +1407,21 @@ class ConfirmacionOrden:
         # Encabezado
         header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
         header.pack(fill=tk.X)
+        
+        btn_volver = tk.Button(
+            header,
+            text="⬅ Volver a Mesas",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._volver
+        )
+        btn_volver.pack(side=tk.LEFT, padx=10, pady=5)
         
         titulo = tk.Label(
             header,
@@ -1444,13 +1502,19 @@ class ConfirmacionOrden:
         """Agrega una nueva orden a la vista"""
         self._refrescar_ordenes()
 
+    def _volver(self):
+        """Regresa a la selección de mesas"""
+        if self.on_volver:
+            self.on_volver()
+
 
 class HistorialControl:
     """Sección de historial y control"""
     
-    def __init__(self, parent, db):
+    def __init__(self, parent, db, on_volver_callback=None):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
         self.db = db
+        self.on_volver = on_volver_callback
         
         self._crear_interfaz()
     
@@ -1459,6 +1523,21 @@ class HistorialControl:
         # Encabezado
         header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
         header.pack(fill=tk.X)
+        
+        btn_volver = tk.Button(
+            header,
+            text="⬅ Volver al Inicio",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._volver
+        )
+        btn_volver.pack(side=tk.LEFT, padx=10, pady=5)
         
         titulo = tk.Label(
             header,
@@ -1511,6 +1590,11 @@ class HistorialControl:
         ordenes = self.db.obtener_ordenes()
         for orden in ordenes:
             self.tree.insert("", tk.END, values=tuple(orden.split("|")))
+
+    def _volver(self):
+        """Regresa a la portada"""
+        if self.on_volver:
+            self.on_volver()
 
 
 class InventarioControl:
@@ -1672,8 +1756,9 @@ class InventarioControl:
 class Configuracion:
     """Sección de configuración"""
     
-    def __init__(self, parent):
+    def __init__(self, parent, on_volver_callback=None):
         self.frame = tk.Frame(parent, bg=Colores.FONDO_PRINCIPAL)
+        self.on_volver = on_volver_callback
         
         self._crear_interfaz()
     
@@ -1682,6 +1767,21 @@ class Configuracion:
         # Encabezado
         header = tk.Frame(self.frame, bg=Colores.ACENTO_NARANJA)
         header.pack(fill=tk.X)
+        
+        btn_volver = tk.Button(
+            header,
+            text="⬅ Volver al Inicio",
+            bg=Colores.GRIS_INACTIVO,
+            fg=Colores.BLANCO,
+            font=("Segoe UI", 9, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._volver
+        )
+        btn_volver.pack(side=tk.LEFT, padx=10, pady=5)
         
         titulo = tk.Label(
             header,
@@ -1794,6 +1894,11 @@ class Configuracion:
             "Diseño: Interfaz moderna y plana (Flat Design)\n\n"
             "© 2026 - Todos los derechos reservados"
         )
+
+    def _volver(self):
+        """Regresa a la portada"""
+        if self.on_volver:
+            self.on_volver()
 
 # ==================== NUEVAS CLASES PARA EL FLUJO INTERACTIVO ====================
 
@@ -2809,13 +2914,14 @@ class AplicacionRestaurante:
         self.mesas_control = ControlMesas(
             self.content_container,
             on_seleccionar_mesa=self._on_seleccionar_mesa,
-            db=self.db
+            db=self.db,
+            on_volver_callback=self._volver_al_inicio
         )
         self.secciones["mesas"] = self.mesas_control.frame
         
         # Catálogo de menú (con vista previa de orden)
         frame_catalogo_container = tk.Frame(self.content_container, bg=Colores.FONDO_PRINCIPAL)
-        self.catalogo = CatalogoMenu(frame_catalogo_container, self._agregar_a_orden, self._quitar_de_orden)
+        self.catalogo = CatalogoMenu(frame_catalogo_container, self._agregar_a_orden, self._quitar_de_orden, on_volver_callback=self._volver_a_mesas)
         self.vista_previa = VistaPreviaOrden(
             frame_catalogo_container,
             self._confirmar_orden_flow,
@@ -2831,9 +2937,9 @@ class AplicacionRestaurante:
         # Secciones administrativas
         self.inventario_control = InventarioControl(self.content_container, self)
         self.secciones["inventario"] = self.inventario_control.frame
-        self.secciones["confirmacion"] = ConfirmacionOrden(self.content_container, self.db).frame
-        self.secciones["historial"] = HistorialControl(self.content_container, self.db).frame
-        self.secciones["configuracion"] = Configuracion(self.content_container).frame
+        self.secciones["confirmacion"] = ConfirmacionOrden(self.content_container, self.db, on_volver_callback=self._volver_a_mesas).frame
+        self.secciones["historial"] = HistorialControl(self.content_container, self.db, on_volver_callback=self._volver_al_inicio).frame
+        self.secciones["configuracion"] = Configuracion(self.content_container, on_volver_callback=self._volver_al_inicio).frame
 
     def _on_nav_select(self, codigo_seccion):
         """Callback cuando se selecciona una opción de navegación en el sidebar"""
@@ -3019,7 +3125,7 @@ class AplicacionRestaurante:
                 self.inventario_control.actualizar_tabla()
             if "historial" in self.secciones:
                 # Recargar tabla de historial
-                self.secciones["historial"] = HistorialControl(self.content_container, self.db).frame
+                self.secciones["historial"] = HistorialControl(self.content_container, self.db, on_volver_callback=self._volver_al_inicio).frame
                 
             # Crear y mostrar Factura
             if "factura" in self.secciones:
